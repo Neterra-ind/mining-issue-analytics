@@ -1,0 +1,100 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Neterra Indonesia brand palette (sampled from neterraindonesia.com) */
+  --color-brand-navy: #033744;
+  --color-brand-blue: #033744;
+  --color-brand-teal: #0e7c86;
+  --color-brand-orange: #f08253;
+  --color-brand-amber: #c98a1f;
+  --color-brand-slate: #64748b;
+
+  /* Override Tailwind's default "blue" color scale so every bg-blue, text-blue, and
+     ring-blue utility used across the app renders in the Neterra navy instead of stock Tailwind blue. */
+  --color-blue-50: #eaf6f9;
+  --color-blue-100: #d2ecf1;
+  --color-blue-200: #a8d9e1;
+  --color-blue-300: #7cc0cd;
+  --color-blue-400: #4fa1b2;
+  --color-blue-500: #1e7185;
+  --color-blue-600: #033744;
+  --color-blue-700: #022a34;
+  --color-blue-800: #011e26;
+  --color-blue-900: #01151b;
+  --color-blue-950: #000c0f;
+
+  --color-sentiment-positive: #1a8f5a;
+  --color-sentiment-neutral: #7a7f87;
+  --color-sentiment-negative: #c0392b;
+
+  --color-risk-low: #4b9c5f;
+  --color-risk-moderate: #d3a625;
+  --color-risk-high: #e07a2b;
+  --color-risk-critical: #c0392b;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+[contenteditable='true'] {
+  outline: 2px dashed color-mix(in srgb, var(--color-brand-blue) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+[contenteditable='true']:focus {
+  outline: 2px solid var(--color-brand-blue);
+  background: color-mix(in srgb, var(--color-brand-blue) 6%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.18s ease-out;
+}
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
