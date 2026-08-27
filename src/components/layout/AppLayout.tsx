@@ -123,7 +123,7 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+      <aside className="hidden w-[clamp(12rem,18vw,16rem)] shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="px-3 pt-5">
           <BrandMark />
         </div>
@@ -168,7 +168,7 @@ export function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-5 py-3 lg:hidden">
+        <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-5 py-3 md:hidden">
           <select
             className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700"
             onChange={(e) => navigate(e.target.value)}
@@ -193,9 +193,7 @@ export function AppLayout() {
           </button>
         </header>
         <main className="min-w-0 flex-1 px-5 py-6">
-          <div className="mx-auto max-w-[1400px]">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>
