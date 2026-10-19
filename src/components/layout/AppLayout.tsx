@@ -81,11 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Reports',
-    items: [
-      { to: '/reports/industry', label: 'Weekly Industry Report', icon: LineChart },
-      { to: '/reports/esg', label: 'Weekly ESG Report', icon: LineChart },
-      { to: '/reports/corporate', label: 'Weekly Corporate Report', icon: LineChart },
-    ],
+    items: [{ to: '/reports', label: 'Weekly Report', icon: LineChart }],
   },
   {
     label: 'Data Management',

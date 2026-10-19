@@ -20,7 +20,7 @@ import {
 import { formatDate, formatNumber, formatRupiah, percentage } from '@/lib/utils'
 import type { GlobalFilters, NewsItem, Pillar } from '@/types'
 
-type ReportType = 'industry' | 'esg' | 'corporate'
+export type ReportType ='industry' | 'esg' | 'corporate'
 
 const REPORT_META: Record<ReportType, { title: string; subtitle: string; pillar: Pillar; icon: typeof FileText; accent: string }> = {
   industry: { title: 'Mining Industry Weekly Intelligence', subtitle: 'Report 1 — Industry Intelligence', pillar: 'Industry', icon: FileText, accent: 'blue' },

@@ -16,7 +16,7 @@ import AnalysisSentiment from '@/pages/analysis/AnalysisSentiment'
 import AnalysisReputation from '@/pages/analysis/AnalysisReputation'
 import AnalysisRisk from '@/pages/analysis/AnalysisRisk'
 import AnalysisCompetitor from '@/pages/analysis/AnalysisCompetitor'
-import ReportPage from '@/pages/reports/ReportPage'
+import ReportsHub from '@/pages/reports/ReportsHub'
 import DataNews from '@/pages/data/DataNews'
 import DataTaxonomy from '@/pages/data/DataTaxonomy'
 import DataCompanies from '@/pages/data/DataCompanies'
@@ -58,9 +58,10 @@ export default function App() {
         <Route path="analysis/risk" element={<AnalysisRisk />} />
         <Route path="analysis/competitor" element={<AnalysisCompetitor />} />
 
-        <Route path="reports/industry" element={<ReportPage reportType="industry" />} />
-        <Route path="reports/esg" element={<ReportPage reportType="esg" />} />
-        <Route path="reports/corporate" element={<ReportPage reportType="corporate" />} />
+        <Route path="reports" element={<ReportsHub />} />
+        <Route path="reports/industry" element={<Navigate to="/reports?type=industry" replace />} />
+        <Route path="reports/esg" element={<Navigate to="/reports?type=esg" replace />} />
+        <Route path="reports/corporate" element={<Navigate to="/reports?type=corporate" replace />} />
 
         <Route path="data/news" element={<DataNews />} />
         <Route path="data/taxonomy" element={<DataTaxonomy />} />
