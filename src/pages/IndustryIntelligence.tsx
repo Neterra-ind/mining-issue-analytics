@@ -328,27 +328,6 @@ function IndustryView({ d }: { d: Feed }) {
 
 </div>
 
-<Card className="mb-5 flex flex-col">
-          <CardHeader title="Media Share" subtitle={`10 media teratas dari ${formatNumber(media.total)} media; pemberitaan tersebar luas`} />
-          <CardBody className="flex-1">
-            <ul className="grid grid-cols-1 gap-x-10 gap-y-2.5 md:grid-cols-2">
-              {media.top.map((m) => (
-                <li key={m.name} className="text-xs">
-                  <div className="mb-0.5 flex justify-between text-slate-700">
-                    <span className="font-medium">{m.name}</span>
-                    <span className="text-slate-500">
-                      {m.count} · {((m.count / total) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 rounded bg-slate-100">
-                    <div className="h-1.5 rounded" style={{ width: `${(m.count / media.top[0].count) * 100}%`, backgroundColor: BLUE }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        </Card>
-
       <Card>
         <CardHeader title="Daftar Berita" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
         <CardBody>
