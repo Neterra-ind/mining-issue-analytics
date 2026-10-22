@@ -8,7 +8,8 @@ import { FilterBar } from '@/components/FilterBar'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Table, type Column } from '@/components/ui/Table'
-import { RiskBadge, SentimentBadge } from '@/components/ui/Badge'
+import { EsgFrameBadge, RiskBadge, SentimentBadge } from '@/components/ui/Badge'
+import { ESG_FRAMES, ESG_FRAME_DEFINITIONS, esgFrameBreakdown } from '@/lib/boundaries'
 import { emptyFilters, filterNews, riskMatrix, sentimentBreakdown, type RiskMatrixPoint } from '@/lib/aggregations'
 import { formatNumber, groupBy } from '@/lib/utils'
 import type { GlobalFilters } from '@/types'
@@ -57,6 +58,7 @@ export default function EsgIntelligence() {
   const esgDist = esgMonitoring.map((t) => ({ label: t.label, count: news.filter((n) => n.topics.includes(t.label)).length }))
 
   const matrix = useMemo(() => riskMatrix(news, esgIssues), [news, esgIssues])
+  const frames = useMemo(() => esgFrameBreakdown(news), [news])
 
   const riskMapRows = useMemo(() => {
     const byIssue = groupBy(news, (n) => n.issueId)
@@ -103,6 +105,21 @@ export default function EsgIntelligence() {
         <TopicChart title="Environmental Issues" subtitle="Pencemaran air, udara, kerusakan lahan & sungai" items={environmentalDist} color="#c98a1f" />
         <TopicChart title="ESG Monitoring" subtitle="Implementasi, sustainability, award, greenwashing" items={esgDist} color="#1a4d8f" />
       </div>
+
+      <Card className="mb-5">
+        <CardHeader title="Bingkai ESG terhadap PT AR" subtitle="Cara media membingkai PT AR pada berita berpilar utama ESG" />
+        <CardBody className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {ESG_FRAMES.map((frame) => (
+            <div key={frame} className="rounded-lg border border-slate-100 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <EsgFrameBadge frame={frame} />
+                <span className="text-xl font-semibold text-slate-800">{frames[frame]}</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">{ESG_FRAME_DEFINITIONS[frame]}</p>
+            </div>
+          ))}
+        </CardBody>
+      </Card>
 
       <Card className="mb-5">
         <CardHeader title="Environmental Risk Map" subtitle="Issue, lokasi, aktor, dampak, sentimen, dan tingkat risiko" />

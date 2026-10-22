@@ -23,6 +23,7 @@ import DataCompanies from '@/pages/data/DataCompanies'
 import DataMedia from '@/pages/data/DataMedia'
 import DataInfluencers from '@/pages/data/DataInfluencers'
 import DataCategories from '@/pages/data/DataCategories'
+import DataBoundaries from '@/pages/data/DataBoundaries'
 import NotFound from '@/pages/NotFound'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="data/media" element={<DataMedia />} />
         <Route path="data/influencers" element={<DataInfluencers />} />
         <Route path="data/categories" element={<DataCategories />} />
+        <Route path="data/boundaries" element={<DataBoundaries />} />
 
         <Route path="*" element={<NotFound />} />
       </Route>

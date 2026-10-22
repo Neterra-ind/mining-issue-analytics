@@ -5,7 +5,8 @@ import type { NewsItem } from '@/types'
 import { useData } from '@/lib/store'
 import { useToast } from '@/lib/toast'
 import { Drawer } from '@/components/ui/Drawer'
-import { SentimentBadge, RiskBadge, PillarBadge } from '@/components/ui/Badge'
+import { SentimentBadge, RiskBadge, PillarBadge, RelatedPillarBadge, PolicyStatusBadge, EsgFrameBadge } from '@/components/ui/Badge'
+import { normalizeRelatedPillars } from '@/lib/boundaries'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { NewsFormModal } from '@/components/news/NewsFormModal'
 import { formatDate, formatRupiah } from '@/lib/utils'
@@ -30,6 +31,7 @@ export function NewsDetailDrawer({ news, onClose, onDeleted }: { news: NewsItem 
   const media = data.media.find((m) => m.id === news.mediaId)
   const company = news.companyId ? data.companies.find((c) => c.id === news.companyId) : null
   const issue = data.issues.find((i) => i.id === news.issueId)
+  const related = normalizeRelatedPillars(news.pillar, news.relatedPillars)
 
   return (
     <>
@@ -60,9 +62,15 @@ export function NewsDetailDrawer({ news, onClose, onDeleted }: { news: NewsItem 
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-2">
             <PillarBadge pillar={news.pillar} />
+            {related.map((p) => (
+              <RelatedPillarBadge key={p} pillar={p} />
+            ))}
             <SentimentBadge sentiment={news.sentiment} />
             <RiskBadge risk={news.risk} />
+            {news.policyStatus && <PolicyStatusBadge status={news.policyStatus} />}
+            {news.esgFrame && <EsgFrameBadge frame={news.esgFrame} />}
           </div>
+          {related.length > 0 && <p className="-mt-3 text-[11px] text-slate-400">Pilar bergaris putus-putus adalah pilar terkait dan tidak dihitung di KPI.</p>}
 
           <p className="text-sm leading-relaxed text-slate-600">{news.summary}</p>
 

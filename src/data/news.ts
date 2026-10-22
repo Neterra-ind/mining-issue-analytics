@@ -1,6 +1,6 @@
 import type { NewsItem } from '@/types'
 
-export const newsSeed: NewsItem[] = [
+const baseNews: NewsItem[] = [
   // ── INDUSTRY — Policy & Regulation ────────────────────────────────────
   { id: 'nws-001', date: '2026-06-16', mediaId: 'md-kontan', mediaType: 'Online', title: 'Pemerintah Godok Revisi Tarif Royalti Minerba, Pengusaha Minta Masa Transisi', url: 'https://kontan.co.id/mining/revisi-royalti-minerba-2026', summary: 'Kementerian ESDM membuka pembahasan revisi tarif royalti mineral dan batubara bersama pelaku industri. Pengusaha tambang meminta masa transisi agar tidak mengganggu keekonomian proyek berjalan.', companyId: null, pillar: 'Industry', topics: ['Policy & Regulation'], issueId: 'iss-royalti', location: 'Jakarta', actor: 'Tri Winarno', stakeholders: ['Pemerintah Pusat', 'Asosiasi Industri'], sentiment: 'Neutral', risk: 'Moderate', program: null, prValue: 18500000 },
   { id: 'nws-002', date: '2026-06-24', mediaId: 'md-bisnis', mediaType: 'Cetak', title: 'Revisi Royalti Emas Berpotensi Naik 2 Persen, Emiten Tambang Waspada', url: 'https://bisnis.com/mining/revisi-royalti-emas-2026', summary: 'Rencana kenaikan tarif royalti emas sebesar dua persen dinilai dapat menekan margin perusahaan tambang skala menengah. Analis menyarankan efisiensi biaya operasi sebagai mitigasi.', companyId: null, pillar: 'Industry', topics: ['Policy & Regulation', 'Business'], issueId: 'iss-royalti', location: 'Jakarta', actor: 'Wisnu Adiputra', stakeholders: ['Investor', 'Pemerintah Pusat'], sentiment: 'Negative', risk: 'Moderate', program: null, prValue: 32000000 },
@@ -11,7 +11,7 @@ export const newsSeed: NewsItem[] = [
   { id: 'nws-005', date: '2026-07-02', mediaId: 'md-tempo', mediaType: 'Online', title: 'Industri Tambang Emas Nasional Dukung Peta Jalan Hilirisasi 2030', url: 'https://tempo.co/hilirisasi-emas-2030', summary: 'Pelaku industri tambang emas menyatakan dukungan terhadap peta jalan hilirisasi mineral yang ditargetkan pemerintah rampung pada 2030, meski membutuhkan insentif investasi tambahan.', companyId: 'co-antam', pillar: 'Industry', topics: ['Downstreaming', 'Investment'], issueId: 'iss-hilirisasi', location: 'Jakarta', actor: 'Hendra Sinaga', stakeholders: ['Asosiasi Industri', 'Pemerintah Pusat'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 19500000 },
 
   // ── INDUSTRY — Investment ─────────────────────────────────────────────
-  { id: 'nws-006', date: '2026-06-27', mediaId: 'md-kontan', mediaType: 'Online', title: 'Vale Indonesia Rampungkan Investasi Smelter Nikel Tahap Kedua', url: 'https://kontan.co.id/vale-smelter-nikel-tahap-2', summary: 'PT Vale Indonesia menyelesaikan pembangunan fasilitas pemurnian nikel tahap kedua senilai lebih dari satu miliar dolar AS, memperkuat rantai pasok baterai kendaraan listrik nasional.', companyId: 'co-vale', pillar: 'Industry', topics: ['Investment'], issueId: 'iss-investasi-smelter', location: 'Sulawesi Tengah', actor: 'Direksi Vale Indonesia', stakeholders: ['Investor', 'Pemerintah Pusat'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 41000000 },
+  { id: 'nws-006', date: '2026-06-27', mediaId: 'md-kontan', mediaType: 'Online', title: 'Antam Rampungkan Perluasan Fasilitas Pemurnian Emas', url: 'https://kontan.co.id/antam-perluasan-pemurnian-emas', summary: 'PT Aneka Tambang Tbk menyelesaikan perluasan kapasitas fasilitas pemurnian emas untuk menampung pasokan dore dari tambang emas dalam negeri, sejalan dengan kebijakan hilirisasi.', companyId: 'co-antam', pillar: 'Industry', topics: ['Investment'], issueId: 'iss-investasi-smelter', location: 'Jakarta', actor: 'Direksi Antam', stakeholders: ['Investor', 'Pemerintah Pusat'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 41000000 },
   { id: 'nws-007', date: '2026-07-21', mediaId: 'md-cnbc', mediaType: 'Online', title: 'Freeport Indonesia Tambah Investasi Smelter Tembaga Gresik', url: 'https://cnbcindonesia.com/freeport-smelter-gresik', summary: 'PT Freeport Indonesia mengumumkan tambahan investasi untuk optimalisasi kapasitas smelter tembaga di Gresik, mendukung target hilirisasi mineral nasional.', companyId: 'co-freeport', pillar: 'Industry', topics: ['Investment', 'Downstreaming'], issueId: 'iss-investasi-smelter', location: 'Gresik', actor: 'Direksi Freeport Indonesia', stakeholders: ['Investor'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 35000000 },
 
   // ── INDUSTRY — Illegal Mining ──────────────────────────────────────────
@@ -22,7 +22,7 @@ export const newsSeed: NewsItem[] = [
 
   // ── INDUSTRY — Mining Operation ────────────────────────────────────────
   { id: 'nws-012', date: '2026-07-05', mediaId: 'md-kontan', mediaType: 'Online', title: 'Produksi Emas Nasional Semester I Tumbuh 6 Persen Dibanding Tahun Lalu', url: 'https://kontan.co.id/produksi-emas-semester-1-2026', summary: 'Kementerian ESDM mencatat produksi emas nasional tumbuh sekitar enam persen pada semester pertama, didorong optimalisasi operasi tambang skala menengah di Sumatera dan Papua.', companyId: null, pillar: 'Industry', topics: ['Mining Operation'], issueId: 'iss-produksi-q2', location: 'Nasional', actor: 'Tri Winarno', stakeholders: ['Pemerintah Pusat', 'Investor'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 22000000 },
-  { id: 'nws-013', date: '2026-07-27', mediaId: 'md-waspada', mediaType: 'Cetak', title: 'Antam Catat Produksi Bijih Nikel Meningkat di Kuartal II', url: 'https://waspada.id/antam-produksi-nikel-q2', summary: 'PT Aneka Tambang Tbk melaporkan kenaikan produksi bijih nikel pada kuartal kedua seiring peningkatan permintaan pasar domestik untuk kebutuhan baterai.', companyId: 'co-antam', pillar: 'Industry', topics: ['Mining Operation'], issueId: 'iss-produksi-q2', location: 'Sulawesi Tenggara', actor: 'Direksi Antam', stakeholders: ['Investor'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 14000000 },
+  { id: 'nws-013', date: '2026-07-27', mediaId: 'md-waspada', mediaType: 'Cetak', title: 'Antam Catat Produksi Emas Pongkor Meningkat di Kuartal II', url: 'https://waspada.id/antam-produksi-emas-pongkor-q2', summary: 'PT Aneka Tambang Tbk melaporkan kenaikan produksi emas dari Unit Bisnis Pertambangan Emas Pongkor pada kuartal kedua seiring optimalisasi tambang bawah tanah.', companyId: 'co-antam', pillar: 'Industry', topics: ['Mining Operation'], issueId: 'iss-produksi-q2', location: 'Bogor', actor: 'Direksi Antam', stakeholders: ['Investor'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 14000000 },
 
   // ── INDUSTRY — Academic Research ───────────────────────────────────────
   { id: 'nws-014', date: '2026-06-30', mediaId: 'md-mongabay', mediaType: 'Online', title: 'Riset USU: Operasi Tambang Emas Beri Multiplier Effect ke UMKM Lokal', url: 'https://mongabay.co.id/riset-usu-multiplier-effect-tambang', summary: 'Studi tim peneliti Universitas Sumatera Utara menemukan efek pengganda ekonomi dari operasi tambang emas terhadap pertumbuhan usaha mikro kecil menengah di wilayah lingkar tambang.', companyId: 'co-ptar', pillar: 'Industry', topics: ['Academic Research'], issueId: 'iss-riset-akademik', location: 'Tapanuli Selatan', actor: 'Prof. Dr. Ir. Erika Lubis', stakeholders: ['Akademisi', 'Masyarakat'], sentiment: 'Positive', risk: 'Low', program: 'Program Pemberdayaan UMKM', prValue: 12500000 },
@@ -100,8 +100,59 @@ export const newsSeed: NewsItem[] = [
   { id: 'nws-056', date: '2026-07-18', mediaId: 'md-antara', mediaType: 'Online', title: 'Manajemen dan Serikat Pekerja PTAR Capai Kesepakatan Bipartit', url: 'https://antaranews.com/ptar-kesepakatan-bipartit-pekerja', summary: 'Manajemen PT Agincourt Resources dan perwakilan serikat pekerja mencapai kesepakatan bipartit terkait tunjangan risiko kerja dan peningkatan fasilitas keselamatan di area tambang.', companyId: 'co-ptar', pillar: 'Corporate', topics: ['Operation'], issueId: 'iss-demo-buruh', location: 'Batang Toru', actor: 'Katarina Siburian Hardono', stakeholders: ['Pekerja'], sentiment: 'Positive', risk: 'Moderate', program: null, prValue: 19500000 },
 
   // ── Additional competitor / cross-company items for benchmarking ────────
-  { id: 'nws-057', date: '2026-07-10', mediaId: 'md-bisnis', mediaType: 'Cetak', title: 'Vale Indonesia Luncurkan Program Restorasi Hutan Pasca Tambang di Sorowako', url: 'https://bisnis.com/vale-restorasi-hutan-sorowako', summary: 'PT Vale Indonesia meluncurkan program restorasi hutan pasca tambang di kawasan Sorowako sebagai bagian dari komitmen keberlanjutan jangka panjang perusahaan.', companyId: 'co-vale', pillar: 'ESG', topics: ['Restoration', 'Sustainability'], issueId: 'iss-restorasi-das', location: 'Sulawesi Selatan', actor: 'Direksi Vale Indonesia', stakeholders: ['Masyarakat', 'Pemerintah Daerah'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 21000000 },
+  { id: 'nws-057', date: '2026-07-10', mediaId: 'md-bisnis', mediaType: 'Cetak', title: 'Freeport Indonesia Perluas Program Restorasi Lahan Pasca Tambang di Mimika', url: 'https://bisnis.com/freeport-restorasi-lahan-mimika', summary: 'PT Freeport Indonesia memperluas program restorasi lahan pasca tambang di kawasan Mimika sebagai bagian dari komitmen keberlanjutan jangka panjang perusahaan.', companyId: 'co-freeport', pillar: 'ESG', topics: ['Restoration', 'Sustainability'], issueId: 'iss-restorasi-das', location: 'Papua Tengah', actor: 'Direksi Freeport Indonesia', stakeholders: ['Masyarakat', 'Pemerintah Daerah'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 21000000 },
   { id: 'nws-058', date: '2026-06-20', mediaId: 'md-cnbc', mediaType: 'Online', title: 'Freeport Indonesia Raih Penghargaan Keselamatan Kerja Tingkat Nasional', url: 'https://cnbcindonesia.com/freeport-penghargaan-keselamatan', summary: 'PT Freeport Indonesia meraih penghargaan keselamatan dan kesehatan kerja tingkat nasional atas capaian zero fatality dalam operasional tambang bawah tanah Grasberg.', companyId: 'co-freeport', pillar: 'Corporate', topics: ['Awards', 'Operation'], issueId: 'iss-kinerja-korporasi', location: 'Papua Tengah', actor: 'Direksi Freeport Indonesia', stakeholders: ['Pemerintah Pusat'], sentiment: 'Positive', risk: 'Low', program: null, prValue: 25000000 },
-  { id: 'nws-059', date: '2026-07-25', mediaId: 'md-waspada', mediaType: 'Cetak', title: 'Antam Hadapi Sorotan Terkait Dugaan Dampak Lingkungan Tambang Nikel', url: 'https://waspada.id/antam-sorotan-dampak-lingkungan-nikel', summary: 'PT Aneka Tambang Tbk menghadapi sorotan publik atas dugaan dampak lingkungan dari operasi tambang nikel di kawasan timur Indonesia, memicu desakan audit lingkungan independen.', companyId: 'co-antam', pillar: 'ESG', topics: ['Mining Impact', 'Land Degradation'], issueId: 'iss-longsor-tambang', location: 'Sulawesi Tenggara', actor: 'LSM Lingkungan', stakeholders: ['LSM', 'Masyarakat'], sentiment: 'Negative', risk: 'High', program: null, prValue: 34000000 },
+  { id: 'nws-059', date: '2026-07-25', mediaId: 'md-waspada', mediaType: 'Cetak', title: 'LSM Desak Audit Lingkungan di Kawasan Tambang Emas Pongkor', url: 'https://waspada.id/lsm-desak-audit-lingkungan-pongkor', summary: 'Koalisi LSM lingkungan mendesak audit lingkungan independen di kawasan tambang emas Pongkor menyusul laporan kerusakan lahan dan risiko longsor di sekitar lokasi penambangan.', companyId: 'co-antam', pillar: 'ESG', topics: ['Mining Impact', 'Land Degradation'], issueId: 'iss-longsor-tambang', location: 'Bogor', actor: 'LSM Lingkungan', stakeholders: ['LSM', 'Masyarakat'], sentiment: 'Negative', risk: 'High', program: null, prValue: 34000000 },
   { id: 'nws-060', date: '2026-08-08', mediaId: 'md-kompas', mediaType: 'Online', title: 'Perbandingan Kinerja ESG Perusahaan Tambang Emas di Indonesia 2026', url: 'https://kompas.com/perbandingan-esg-tambang-emas-2026', summary: 'Analisis media membandingkan kinerja pengelolaan ESG antara beberapa perusahaan tambang emas dan mineral besar di Indonesia sepanjang paruh pertama 2026, termasuk PTAR, Freeport, dan Antam.', companyId: 'co-ptar', pillar: 'ESG', topics: ['Sustainability', 'ESG Implementation'], issueId: 'iss-esg-report', location: 'Nasional', actor: 'Redaksi Kompas', stakeholders: ['Media', 'Investor'], sentiment: 'Neutral', risk: 'Low', program: null, prValue: 31000000 },
 ]
+
+/* ── Anotasi batasan ──────────────────────────────────────────────────────
+ * Pilar terkait (maks. 2, tidak dihitung di KPI), status kebijakan untuk
+ * berita regulasi Industry, dan bingkai ESG untuk berita ESG yang menyebut PT AR. */
+type Annotation = Pick<NewsItem, 'relatedPillars' | 'policyStatus' | 'esgFrame'>
+
+const ANNOTATIONS: Record<string, Annotation> = {
+  // Industry
+  'nws-001': { policyStatus: 'Wacana' },
+  'nws-002': { policyStatus: 'Wacana', relatedPillars: ['Corporate'] },
+  'nws-003': { policyStatus: 'Draf' },
+  'nws-004': { policyStatus: 'Wacana' },
+  'nws-005': { policyStatus: 'Wacana' },
+  'nws-009': { policyStatus: 'Resmi' },
+  'nws-011': { policyStatus: 'Resmi' },
+  'nws-014': { relatedPillars: ['Corporate'] },
+  'nws-015': { relatedPillars: ['Corporate'] },
+  'nws-016': { policyStatus: 'Wacana' },
+  'nws-017': { policyStatus: 'Wacana' },
+  // ESG
+  'nws-018': { esgFrame: 'Bagian masalah sektor', relatedPillars: ['Corporate'] },
+  'nws-019': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-020': { relatedPillars: ['Industry'] },
+  'nws-022': { relatedPillars: ['Industry'] },
+  'nws-023': { relatedPillars: ['Industry'] },
+  'nws-024': { esgFrame: 'Tertuduh', relatedPillars: ['Corporate'] },
+  'nws-025': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-026': { esgFrame: 'Teladan' },
+  'nws-027': { esgFrame: 'Tertuduh', relatedPillars: ['Corporate'] },
+  'nws-028': { relatedPillars: ['Industry'] },
+  'nws-029': { esgFrame: 'Tertuduh', relatedPillars: ['Corporate', 'Industry'] },
+  'nws-030': { esgFrame: 'Tertuduh' },
+  'nws-031': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-033': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-034': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-035': { relatedPillars: ['Industry'] },
+  'nws-036': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-037': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-038': { esgFrame: 'Teladan', relatedPillars: ['Corporate'] },
+  'nws-060': { esgFrame: 'Bagian masalah sektor', relatedPillars: ['Corporate', 'Industry'] },
+  // Corporate
+  'nws-039': { relatedPillars: ['Industry'] },
+  'nws-042': { relatedPillars: ['Industry'] },
+  'nws-050': { relatedPillars: ['Industry'] },
+  'nws-051': { relatedPillars: ['ESG'] },
+  'nws-052': { relatedPillars: ['ESG'] },
+  'nws-053': { relatedPillars: ['Industry'] },
+  'nws-054': { relatedPillars: ['Industry'] },
+}
+
+export const newsSeed: NewsItem[] = baseNews.map((n) => ({ ...n, ...ANNOTATIONS[n.id] }))

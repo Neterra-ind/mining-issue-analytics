@@ -1,12 +1,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { type ComponentType } from 'react'
 import {
-  BarChart3,
   Building2,
-  FileBarChart,
   Gauge,
   LayoutDashboard,
-  LayoutList,
   Leaf,
   LineChart,
   ListTree,
@@ -16,9 +13,7 @@ import {
   Scale,
   ShieldAlert,
   Shovel,
-  Tags,
   Trophy,
-  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth'
@@ -66,8 +61,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/news', label: 'News Monitoring', icon: Newspaper },
       { to: '/issues', label: 'Issue Monitoring', icon: ListTree },
-      { to: '/stakeholders', label: 'Stakeholder / Influencer', icon: Users },
-      { to: '/media', label: 'Media Monitoring', icon: FileBarChart },
     ],
   },
   {
@@ -82,17 +75,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Reports',
     items: [{ to: '/reports', label: 'Weekly Report', icon: LineChart }],
-  },
-  {
-    label: 'Data Management',
-    items: [
-      { to: '/data/news', label: 'News Database', icon: BarChart3 },
-      { to: '/data/taxonomy', label: 'Taxonomy', icon: Tags },
-      { to: '/data/companies', label: 'Companies', icon: Building2 },
-      { to: '/data/media', label: 'Media', icon: Newspaper },
-      { to: '/data/influencers', label: 'Influencers', icon: Users },
-      { to: '/data/categories', label: 'Categories', icon: LayoutList },
-    ],
   },
 ]
 
@@ -150,8 +132,8 @@ export function AppLayout() {
         </nav>
         <div className="shrink-0 space-y-3 border-t border-slate-100 px-3 py-3">
           <div className="flex items-center gap-2 px-2.5">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Powered by</span>
-            <img src={logoNeterra} alt="Neterra Indonesia" className="h-8 w-auto object-contain" />
+            <span className="text-[8px] font-medium uppercase tracking-wide text-slate-400">Powered by</span>
+            <img src={logoNeterra} alt="Neterra Indonesia" className="h-5 w-auto object-contain" />
           </div>
           <button
             onClick={handleLogout}

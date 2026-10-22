@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -7,12 +8,17 @@ export function KpiCard({
   icon: Icon,
   tone = 'slate',
   hint,
+  className,
+  children,
 }: {
   label: string
   value: string
   icon: LucideIcon
   tone?: 'slate' | 'emerald' | 'red' | 'amber' | 'blue'
   hint?: string
+  className?: string
+  /** Konten tambahan di bawah nilai, mis. bar proporsi. */
+  children?: ReactNode
 }) {
   const toneClass = {
     slate: 'bg-slate-50 text-slate-600',
@@ -23,7 +29,7 @@ export function KpiCard({
   }[tone]
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className={cn('rounded-xl border border-slate-200 bg-white p-4 shadow-sm', className)}>
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-slate-500">{label}</p>
         <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', toneClass)}>
@@ -32,6 +38,7 @@ export function KpiCard({
       </div>
       <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{value}</p>
       {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {children}
     </div>
   )
 }
