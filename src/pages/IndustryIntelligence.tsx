@@ -212,10 +212,10 @@ function IndustryView({ d }: { d: Feed }) {
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card className="flex flex-col">
+<Card className="flex flex-col">
           <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, komposisi sentimen tiap cakupan (n di label). Klik batang untuk rincian`} />
           <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={330}>
+            <ResponsiveContainer width="100%" height={500}>
               <BarChart data={byCoverage} layout="vertical" stackOffset="expand" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
                 <XAxis type="number" tickFormatter={(v: number) => `${Math.round(v * 100)}%`} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -233,8 +233,80 @@ function IndustryView({ d }: { d: Feed }) {
             </ResponsiveContainer>
           </CardBody>
         </Card>
+<Card className="flex flex-col">
+        <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]}`} />
+        <CardBody>
+          <div className="mb-2 flex h-3 w-full overflow-hidden rounded">
+            {detail.sent.map((n, i) => (
+              <div key={i} style={{ width: `${(n / Math.max(1, detail.total)) * 100}%`, backgroundColor: SENT_COLORS[i] }} title={`${SENTIMENTS[i]}: ${n}`} />
+            ))}
+          </div>
+          <p className="mb-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+            {detail.sent.map((n, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: SENT_COLORS[i] }} />
+                {SENTIMENTS[i]} {formatNumber(n)} ({Math.round((n / Math.max(1, detail.total)) * 100)}%)
+              </span>
+            ))}
+          </p>
+          <div className="grid grid-cols-1 gap-5">
+            <div className="flex flex-col items-center gap-4 md:flex-row">
+              <div className="relative h-44 w-44 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={46} outerRadius={80} paddingAngle={1} stroke="none">
+                      {detail.slices.map((_, i) => (
+                        <Cell key={i} fill={SLICES[i % SLICES.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
+                  <span className="text-[11px] text-slate-400">berita</span>
+                </div>
+              </div>
+              <ul className="w-full space-y-1.5 text-xs">
+                {detail.slices.map((sl, i) => (
+                  <li key={sl.name} className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 text-slate-700">
+                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: SLICES[i % SLICES.length] }} />
+                      {sl.name}
+                    </span>
+                    <span className="whitespace-nowrap text-slate-500">
+                      {formatNumber(sl.count)} · {Math.round((sl.count / Math.max(1, detail.total)) * 100)}%
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Berita terbaru pada cakupan ini</p>
+              <ul className="divide-y divide-slate-100">
+                {detail.latest.slice(0, 4).map((r, k) => (
+                  <li key={k} className="py-1.5 text-xs leading-snug">
+                    {r[4] ? (
+                      <a href={r[4]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[3]}</a>
+                    ) : (
+                      <span className="text-slate-700">{r[3]}</span>
+                    )}
+                    <span className="block text-[11px] text-slate-400">
+                      {shortDate(r[0])} · {industryMedia[r[1]]} · {SENTIMENTS[r[5]]}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+</div>
 
-        <Card className="flex flex-col">
+      
+
+      <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+<Card className="flex flex-col">
           <CardHeader title="Cakupan per minggu" subtitle="Jumlah berita per cakupan; warna lebih pekat = lebih ramai dibanding minggu lain pada cakupan yang sama" />
           <CardBody className="flex-1">
             <table className="w-full table-fixed text-sm">
@@ -272,79 +344,7 @@ function IndustryView({ d }: { d: Feed }) {
             </table>
           </CardBody>
         </Card>
-      </div>
-
-      <Card className="mb-5">
-        <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]}`} />
-        <CardBody>
-          <div className="mb-2 flex h-3 w-full overflow-hidden rounded">
-            {detail.sent.map((n, i) => (
-              <div key={i} style={{ width: `${(n / Math.max(1, detail.total)) * 100}%`, backgroundColor: SENT_COLORS[i] }} title={`${SENTIMENTS[i]}: ${n}`} />
-            ))}
-          </div>
-          <p className="mb-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
-            {detail.sent.map((n, i) => (
-              <span key={i} className="flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: SENT_COLORS[i] }} />
-                {SENTIMENTS[i]} {formatNumber(n)} ({Math.round((n / Math.max(1, detail.total)) * 100)}%)
-              </span>
-            ))}
-          </p>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="flex flex-col items-center gap-4 md:flex-row">
-              <div className="relative h-52 w-52 shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={1} stroke="none">
-                      {detail.slices.map((_, i) => (
-                        <Cell key={i} fill={SLICES[i % SLICES.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
-                  <span className="text-[11px] text-slate-400">berita</span>
-                </div>
-              </div>
-              <ul className="w-full space-y-1.5 text-xs">
-                {detail.slices.map((sl, i) => (
-                  <li key={sl.name} className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-2 text-slate-700">
-                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: SLICES[i % SLICES.length] }} />
-                      {sl.name}
-                    </span>
-                    <span className="whitespace-nowrap text-slate-500">
-                      {formatNumber(sl.count)} · {Math.round((sl.count / Math.max(1, detail.total)) * 100)}%
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Berita terbaru pada cakupan ini</p>
-              <ul className="divide-y divide-slate-100">
-                {detail.latest.map((r, k) => (
-                  <li key={k} className="py-1.5 text-xs leading-snug">
-                    {r[4] ? (
-                      <a href={r[4]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[3]}</a>
-                    ) : (
-                      <span className="text-slate-700">{r[3]}</span>
-                    )}
-                    <span className="block text-[11px] text-slate-400">
-                      {shortDate(r[0])} · {industryMedia[r[1]]} · {SENTIMENTS[r[5]]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card className="flex flex-col">
+<Card className="flex flex-col">
           <CardHeader title="Sentimen per minggu" subtitle="Jumlah berita menurut sentimen. * minggu terakhir baru berjalan" />
           <CardBody className="flex-1">
             <ResponsiveContainer width="100%" height={260}>
@@ -361,30 +361,10 @@ function IndustryView({ d }: { d: Feed }) {
             </ResponsiveContainer>
           </CardBody>
         </Card>
-
-        <Card className="flex flex-col">
-          <CardHeader title="Definisi sentimen" subtitle="Sudut pandang: bisnis dan operasional perusahaan tambang emas" />
-          <CardBody className="flex-1">
-            <ul className="space-y-3">
-              {SENTIMENTS.map((s, i) => (
-                <li key={s} className="flex gap-3 text-xs">
-                  <span className="mt-0.5 inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: SENT_COLORS[i] }} />
-                  <div>
-                    <p className="font-semibold text-slate-800">
-                      {s} <span className="font-normal text-slate-400">· {formatNumber(sentTotals[i])} berita</span>
-                    </p>
-                    <p className="text-slate-500">{SENTIMENT_HINT[i]}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-[11px] text-slate-400">Sentimen ditentukan dengan aturan kata kunci pada judul dan paragraf awal, bukan label dari file sumber.</p>
-          </CardBody>
-        </Card>
-      </div>
+</div>
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card className="flex flex-col">
+<Card className="flex flex-col">
           <CardHeader title="Volume harian" subtitle="Jumlah berita mining industry per hari (satu judul dihitung sekali)" />
           <CardBody className="flex-1">
             <ResponsiveContainer width="100%" height={260}>
@@ -398,8 +378,7 @@ function IndustryView({ d }: { d: Feed }) {
             </ResponsiveContainer>
           </CardBody>
         </Card>
-
-        <Card className="flex flex-col">
+<Card className="flex flex-col">
           <CardHeader title="Media Share" subtitle={`10 media teratas dari ${formatNumber(media.total)} media; pemberitaan tersebar luas`} />
           <CardBody className="flex-1">
             <ul className="space-y-2">
@@ -419,7 +398,29 @@ function IndustryView({ d }: { d: Feed }) {
             </ul>
           </CardBody>
         </Card>
-      </div>
+</div>
+
+<div className="mb-5">
+<Card className="flex flex-col">
+          <CardHeader title="Definisi sentimen" subtitle="Sudut pandang: bisnis dan operasional perusahaan tambang emas" />
+          <CardBody className="flex-1">
+            <ul className="space-y-3">
+              {SENTIMENTS.map((s, i) => (
+                <li key={s} className="flex gap-3 text-xs">
+                  <span className="mt-0.5 inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: SENT_COLORS[i] }} />
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      {s} <span className="font-normal text-slate-400">· {formatNumber(sentTotals[i])} berita</span>
+                    </p>
+                    <p className="text-slate-500">{SENTIMENT_HINT[i]}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-[11px] text-slate-400">Sentimen ditentukan dengan aturan kata kunci pada judul dan paragraf awal, bukan label dari file sumber.</p>
+          </CardBody>
+        </Card>
+</div>
 
       <Card>
         <CardHeader title="Daftar Berita" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
