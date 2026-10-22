@@ -28,11 +28,6 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', '
 function shortDate(iso: string) {
   return `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`
 }
-function weekStart(iso: string): string {
-  const d = new Date(iso + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7))
-  return d.toISOString().slice(0, 10)
-}
 const PAGE = 25
 
 export default function IndustryIntelligence() {
@@ -66,7 +61,6 @@ function IndustryView({ d }: { d: Feed }) {
     return rows
   }, [COVERAGES, industryFeed])
 
-  const weeks = useMemo(() => Array.from(new Set(industryFeed.map((r) => weekStart(r[0])))).sort(), [industryFeed])
   const lastDay = useMemo(() => industryFeed.reduce((m, r) => (r[0] > m ? r[0] : m), ''), [industryFeed])
   const recent = useMemo(() => {
     const day = (n: number) => {
@@ -84,12 +78,6 @@ function IndustryView({ d }: { d: Feed }) {
     }
     return { cur, prev }
   }, [industryFeed, lastDay])
-
-  const heat = useMemo(() => {
-    const g: number[][] = COVERAGES.map(() => weeks.map(() => 0))
-    for (const r of industryFeed) g[r[2]][weeks.indexOf(weekStart(r[0]))]++
-    return g
-  }, [COVERAGES, industryFeed, weeks])
 
   const daily = useMemo(() => {
     const m = new Map<string, number>()
@@ -272,45 +260,7 @@ function IndustryView({ d }: { d: Feed }) {
         </Card>
 </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
-<Card className="flex flex-col">
-          <CardHeader title="Cakupan per minggu" subtitle="Jumlah berita per cakupan; warna lebih pekat = lebih ramai dibanding minggu lain pada cakupan yang sama" />
-          <CardBody className="flex-1">
-            <table className="w-full table-fixed text-sm">
-              <thead>
-                <tr className="text-[11px] font-medium text-slate-500">
-                  <th className="w-[34%] py-1.5 pr-2 text-left">Cakupan</th>
-                  {weeks.map((w, i) => (
-                    <th key={w} className="px-1 py-1.5 text-center">
-                      {shortDate(w)}
-                      {i === weeks.length - 1 && <span className="block text-[9px] font-normal text-slate-400">s/d {shortDate(lastDay)}</span>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {COVERAGES.map((c, ci) => {
-                  const max = Math.max(1, ...heat[ci])
-                  return (
-                    <tr key={c}>
-                      <td className="py-1 pr-2 text-xs text-slate-700">{c}</td>
-                      {heat[ci].map((v, wi) => {
-                        const a = v / max
-                        return (
-                          <td key={wi} className="p-0.5">
-                            <div className="rounded py-2 text-center text-xs font-medium" style={{ backgroundColor: `rgba(22,84,122,${0.08 + a * 0.8})`, color: a > 0.55 ? '#fff' : '#334155' }}>
-                              {v}
-                            </div>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </CardBody>
-        </Card>
+      <div className="mb-5 grid grid-cols-1 gap-4">
 <Card className="flex flex-col">
           <CardHeader title="Volume harian" subtitle="Jumlah berita mining industry per hari (satu judul dihitung sekali)" />
           <CardBody className="flex-1">
