@@ -50,6 +50,8 @@ function IndustryView({ d }: { d: Feed }) {
   const total = industryFeed.length
 
   const [selected, setSelected] = useState(0)
+  const [theme, setTheme] = useState<number | null>(null)
+  useEffect(() => setTheme(null), [selected])
   const [openAlert, setOpenAlert] = useState<number | null>(null)
   const [covFilter, setCovFilter] = useState(-1)
   const [query, setQuery] = useState('')
@@ -93,8 +95,8 @@ function IndustryView({ d }: { d: Feed }) {
     for (const r of rows) t.set(r[5], (t.get(r[5]) ?? 0) + 1)
     const slices = Array.from(t.entries())
       .sort((a, b) => b[1] - a[1])
-      .map(([i, count]) => ({ name: INDUSTRY_THEMES[i], count }))
-    return { total: rows.length, slices, latest: rows.slice(0, 6) }
+      .map(([i, count]) => ({ idx: i, name: INDUSTRY_THEMES[i], count }))
+    return { total: rows.length, slices, rows }
   }, [industryFeed, selected, INDUSTRY_THEMES])
 
   const alerts = useMemo(() => {
@@ -177,16 +179,16 @@ function IndustryView({ d }: { d: Feed }) {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
 <Card className="flex flex-col">
-        <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]}`} />
+        <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]} Klik tema untuk melihat beritanya.`} />
         <CardBody>
           <div className="grid grid-cols-1 gap-5">
             <div className="flex flex-col items-center gap-4 md:flex-row">
               <div className="relative h-44 w-44 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={46} outerRadius={80} paddingAngle={1} stroke="none">
+                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={46} outerRadius={80} paddingAngle={1} stroke="none" onClick={(_, i) => setTheme((t) => (t === detail.slices[i].idx ? null : detail.slices[i].idx))} style={{ cursor: 'pointer' }}>
                       {detail.slices.map((_, i) => (
-                        <Cell key={i} fill={SLICES[i % SLICES.length]} />
+                        <Cell key={i} fill={SLICES[i % SLICES.length]} fillOpacity={theme === null || theme === detail.slices[i].idx ? 1 : 0.3} />
                       ))}
                     </Pie>
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
@@ -199,7 +201,11 @@ function IndustryView({ d }: { d: Feed }) {
               </div>
               <ul className="w-full space-y-1.5 text-xs">
                 {detail.slices.map((sl, i) => (
-                  <li key={sl.name} className="flex items-center justify-between gap-3">
+                  <li
+                    key={sl.name}
+                    onClick={() => setTheme((t) => (t === sl.idx ? null : sl.idx))}
+                    className={`-mx-1.5 flex cursor-pointer items-center justify-between gap-3 rounded px-1.5 py-0.5 transition-colors hover:bg-slate-50 ${theme === sl.idx ? 'bg-slate-100 font-semibold' : ''} ${theme !== null && theme !== sl.idx ? 'opacity-50' : ''}`}
+                  >
                     <span className="flex items-center gap-2 text-slate-700">
                       <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: SLICES[i % SLICES.length] }} />
                       {sl.name}
@@ -212,9 +218,18 @@ function IndustryView({ d }: { d: Feed }) {
               </ul>
             </div>
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Berita terbaru pada cakupan ini</p>
-              <ul className="divide-y divide-slate-100">
-                {detail.latest.slice(0, 4).map((r, k) => (
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  {theme === null ? 'Berita terbaru pada cakupan ini' : `Berita terbaru: ${INDUSTRY_THEMES[theme]}`}
+                </p>
+                {theme !== null && (
+                  <button type="button" onClick={() => setTheme(null)} className="text-[11px] text-blue-700 hover:underline">
+                    Tampilkan semua
+                  </button>
+                )}
+              </div>
+              <ul className={`divide-y divide-slate-100 ${theme !== null ? 'max-h-72 overflow-y-auto' : ''}`}>
+                {(theme === null ? detail.rows.slice(0, 4) : detail.rows.filter((r) => r[5] === theme).slice(0, 15)).map((r, k) => (
                   <li key={k} className="py-1.5 text-xs leading-snug">
                     {r[4] ? (
                       <a href={r[4]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[3]}</a>
