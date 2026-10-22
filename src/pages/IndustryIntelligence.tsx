@@ -1,18 +1,20 @@
-import { useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Newspaper, Radio, Layers, Filter, ExternalLink, Search, AlertTriangle, ShieldAlert } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Newspaper, Radio, Layers, AlertOctagon, ExternalLink, Search, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { KpiCard } from '@/components/ui/KpiCard'
-import { INDUSTRY_ISSUES, INDUSTRY_OUTSIDE, INDUSTRY_STATS, alertFeed, industryFeed, industryMedia, industrySubs } from '@/data/industryFeed'
 import { formatNumber } from '@/lib/utils'
 
-const BLUE = '#16547A'
-const GREY = '#94a3b8'
-const ORANGE = '#E28A2B'
-const SLICES = ['#16547A', '#2E7DB0', '#6FA8CF', '#A9C8E0', '#94a3b8', '#E28A2B', '#C5CED8']
+type Feed = typeof import('@/data/industryFeed')
 
-/** Kartu alert untuk PT AR. Batas: berapa berita dalam 7 hari terakhir yang memicu status. */
+const BLUE = '#16547A'
+// Negative, Potential Negative, Neutral, Positive
+const SENT_COLORS = ['#C2410C', '#F4B183', '#CBD5E1', '#16547A']
+const SENT_BADGE = ['bg-orange-100 text-orange-800', 'bg-orange-50 text-orange-700', 'bg-slate-100 text-slate-600', 'bg-blue-50 text-blue-800']
+const SLICES = ['#16547A', '#2E7DB0', '#6FA8CF', '#A9C8E0', '#94a3b8', '#E28A2B', '#F4B183', '#C5CED8', '#64748b', '#B45309', '#CBD5E1', '#475569']
+
+/** Kartu alert untuk PT AR. Batas: jumlah berita dalam 7 hari terakhir yang memicu status. */
 const ALERT_CARDS = [
   { title: 'Menyebut PT AR / Martabe langsung', desc: 'Berita yang memuat Agincourt, PTAR, Martabe atau Batang Toru: operasi, lingkungan, hubungan dengan warga.', rule: 'Tinggi bila ≥1 berita dalam 7 hari terakhir', high: 1, warn: 1 },
   { title: 'Kebijakan nasional untuk produsen emas', desc: 'HPE/harga patokan emas, royalti, PNBP minerba, DHE, bea keluar, Satgas PKH, izin tambang prioritas, Permen ESDM.', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥10', high: 10, warn: 3 },
@@ -25,45 +27,80 @@ const LEVEL_STYLE = {
   Normal: 'bg-slate-100 text-slate-600',
 } as const
 
-function weekStart(iso: string): string {
-  const d = new Date(iso + 'T00:00:00Z')
-  const day = (d.getUTCDay() + 6) % 7
-  d.setUTCDate(d.getUTCDate() - day)
-  return d.toISOString().slice(0, 10)
-}
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 function shortDate(iso: string) {
   return `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`
 }
-
+function weekStart(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7))
+  return d.toISOString().slice(0, 10)
+}
 const PAGE = 25
 
 export default function IndustryIntelligence() {
-  const [issueFilter, setIssueFilter] = useState<number>(-1)
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(0)
-  const [selected, setSelected] = useState(0)
-  const [openAlert, setOpenAlert] = useState<number | null>(null)
+  const [feed, setFeed] = useState<Feed | null>(null)
+  useEffect(() => {
+    import('@/data/industryFeed').then(setFeed)
+  }, [])
+  if (!feed) {
+    return (
+      <div>
+        <PageHeader configKey="industry.title" title="Mining Industry" subtitleKey="industry.subtitle" subtitle="Memuat data berita…" />
+      </div>
+    )
+  }
+  return <IndustryView d={feed} />
+}
+
+function IndustryView({ d }: { d: Feed }) {
+  const { COVERAGES, COVERAGE_HINT, SENTIMENTS, SENTIMENT_HINT, INDUSTRY_THEMES, INDUSTRY_STATS, industryFeed, industryMedia, alertFeed } = d
   const total = industryFeed.length
 
-  const byIssue = useMemo(() => {
-    const counts = INDUSTRY_ISSUES.map(() => 0)
-    for (const r of industryFeed) counts[r[2]]++
-    return INDUSTRY_ISSUES.map((label, i) => ({ label, idx: i, count: counts[i], outside: INDUSTRY_OUTSIDE.includes(label) }))
-      .sort((a, b) => b.count - a.count)
-  }, [])
+  const [selected, setSelected] = useState(0)
+  const [openAlert, setOpenAlert] = useState<number | null>(null)
+  const [covFilter, setCovFilter] = useState(-1)
+  const [senFilter, setSenFilter] = useState(-1)
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
 
-  const weekly = useMemo(() => {
-    const weeks = Array.from(new Set(industryFeed.map((r) => weekStart(r[0])))).sort()
-    const grid: Record<string, Record<string, number>> = {}
+  // cakupan x sentimen
+  const byCoverage = useMemo(() => {
+    const rows = COVERAGES.map((label, i) => ({ label, idx: i, total: 0, s0: 0, s1: 0, s2: 0, s3: 0 }))
     for (const r of industryFeed) {
-      const issue = INDUSTRY_ISSUES[r[2]]
-      const w = weekStart(r[0])
-      grid[issue] ??= {}
-      grid[issue][w] = (grid[issue][w] ?? 0) + 1
+      const x = rows[r[2]]
+      x.total++
+      ;(x as unknown as Record<string, number>)['s' + r[5]]++
     }
-    return { weeks, grid }
-  }, [])
+    return rows.map((x) => ({ ...x, axis: `${x.label} (${formatNumber(x.total)})` }))
+  }, [COVERAGES, industryFeed])
+
+  const sentTotals = useMemo(() => {
+    const t = [0, 0, 0, 0]
+    for (const r of industryFeed) t[r[5]]++
+    return t
+  }, [industryFeed])
+  const risky = sentTotals[0] + sentTotals[1]
+
+  const weeks = useMemo(() => Array.from(new Set(industryFeed.map((r) => weekStart(r[0])))).sort(), [industryFeed])
+  const lastDay = useMemo(() => industryFeed.reduce((m, r) => (r[0] > m ? r[0] : m), ''), [industryFeed])
+
+  const heat = useMemo(() => {
+    const g: number[][] = COVERAGES.map(() => weeks.map(() => 0))
+    for (const r of industryFeed) g[r[2]][weeks.indexOf(weekStart(r[0]))]++
+    return g
+  }, [COVERAGES, industryFeed, weeks])
+
+  const weeklySent = useMemo(
+    () =>
+      weeks.map((w, wi) => {
+        const row: Record<string, number | string> = { label: shortDate(w) + (wi === weeks.length - 1 ? '*' : '') }
+        SENTIMENTS.forEach((s) => (row[s] = 0))
+        for (const r of industryFeed) if (weekStart(r[0]) === w) row[SENTIMENTS[r[5]]] = (row[SENTIMENTS[r[5]]] as number) + 1
+        return row
+      }),
+    [SENTIMENTS, industryFeed, weeks],
+  )
 
   const daily = useMemo(() => {
     const m = new Map<string, number>()
@@ -71,29 +108,29 @@ export default function IndustryIntelligence() {
     return Array.from(m.entries())
       .sort((a, b) => (a[0] < b[0] ? -1 : 1))
       .map(([date, count]) => ({ date, label: shortDate(date), count }))
-  }, [])
+  }, [industryFeed])
 
   const media = useMemo(() => {
     const m = new Map<number, number>()
     for (const r of industryFeed) m.set(r[1], (m.get(r[1]) ?? 0) + 1)
     const sorted = Array.from(m.entries()).sort((a, b) => b[1] - a[1])
     return { total: sorted.length, top: sorted.slice(0, 10).map(([i, count]) => ({ name: industryMedia[i], count })) }
-  }, [])
+  }, [industryFeed, industryMedia])
   const topShare = media.top.reduce((s, r) => s + r.count, 0) / total
-  const biggest = byIssue.filter((b) => !b.outside)[0]
-  const list = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return industryFeed.filter((r) => (issueFilter < 0 || r[2] === issueFilter) && (!q || r[3].toLowerCase().includes(q) || industryMedia[r[1]].toLowerCase().includes(q)))
-  }, [issueFilter, query])
-  const pages = Math.max(1, Math.ceil(list.length / PAGE))
-  const shown = list.slice(page * PAGE, page * PAGE + PAGE)
+
   const detail = useMemo(() => {
     const rows = industryFeed.filter((r) => r[2] === selected)
-    const m = new Map<number, number>()
-    for (const r of rows) if (r[5] >= 0) m.set(r[5], (m.get(r[5]) ?? 0) + 1)
-    const slices = Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([i, count]) => ({ name: industrySubs[i], count }))
-    return { total: rows.length, slices, latest: rows.slice(0, 6) }
-  }, [selected])
+    const t = new Map<number, number>()
+    const s = [0, 0, 0, 0]
+    for (const r of rows) {
+      t.set(r[6], (t.get(r[6]) ?? 0) + 1)
+      s[r[5]]++
+    }
+    const slices = Array.from(t.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([i, count]) => ({ name: INDUSTRY_THEMES[i], count }))
+    return { total: rows.length, slices, sent: s, latest: rows.slice(0, 6) }
+  }, [industryFeed, selected, INDUSTRY_THEMES])
 
   const alerts = useMemo(() => {
     const last = alertFeed.reduce((mx, r) => (r[0] > mx ? r[0] : mx), '')
@@ -106,18 +143,27 @@ export default function IndustryIntelligence() {
       const level: keyof typeof LEVEL_STYLE = n7 >= c.high ? 'Tinggi' : n7 >= c.warn ? 'Waspada' : 'Normal'
       return { ...c, items, n7, level }
     })
-  }, [])
-  const lastDay = daily[daily.length - 1]?.date ?? ''
+  }, [alertFeed])
+
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return industryFeed.filter(
+      (r) => (covFilter < 0 || r[2] === covFilter) && (senFilter < 0 || r[5] === senFilter) && (!q || r[3].toLowerCase().includes(q) || industryMedia[r[1]].toLowerCase().includes(q)),
+    )
+  }, [industryFeed, industryMedia, covFilter, senFilter, query])
+  const pages = Math.max(1, Math.ceil(list.length / PAGE))
+  const shown = list.slice(page * PAGE, page * PAGE + PAGE)
+  const biggest = [...byCoverage].sort((a, b) => b.total - a.total)[0]
 
   return (
     <div>
-      <PageHeader configKey="industry.title" title="Mining Industry" subtitleKey="industry.subtitle" subtitle="Isu dan pemberitaan yang perlu diperhatikan industri pertambangan, khususnya emas." />
+      <PageHeader configKey="industry.title" title="Mining Industry" subtitleKey="industry.subtitle" subtitle="Pemberitaan industri pertambangan yang perlu diperhatikan, dengan fokus pada tambang emas." />
 
       <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <KpiCard label="Berita isu tambang emas" value={formatNumber(total)} icon={Newspaper} tone="blue" hint={`dari ${formatNumber(INDUSTRY_STATS.miningAll)} berita tambang semua komoditas`} />
-        <KpiCard label="Isu terbesar" value={biggest.label} icon={Layers} tone="slate" hint={`${formatNumber(biggest.count)} berita (${Math.round((biggest.count / total) * 100)}%)`} />
+        <KpiCard label="Berita mining industry" value={formatNumber(total)} icon={Newspaper} tone="blue" hint={`dari ${formatNumber(INDUSTRY_STATS.miningAll)} berita tambang, tanpa batu bara`} />
+        <KpiCard label="Negative + Potential Negative" value={formatNumber(risky)} icon={AlertOctagon} tone="amber" hint={`${Math.round((risky / total) * 100)}% berita: ${formatNumber(sentTotals[0])} negatif, ${formatNumber(sentTotals[1])} berpotensi`} />
+        <KpiCard label="Cakupan terbesar" value={biggest.label.split(' & ')[0]} icon={Layers} tone="slate" hint={`${formatNumber(biggest.total)} berita (${Math.round((biggest.total / total) * 100)}%)`} />
         <KpiCard label="Media" value={formatNumber(media.total)} icon={Radio} tone="slate" hint={`10 teratas hanya ${Math.round(topShare * 100)}% berita`} />
-        <KpiCard label="Porsi emas" value={`${Math.round((total / INDUSTRY_STATS.miningAll) * 100)}%`} icon={Filter} tone="amber" hint="sisanya batu bara, nikel, timah, dan lain-lain" />
       </div>
 
       <div className="mb-5">
@@ -166,56 +212,53 @@ export default function IndustryIntelligence() {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="flex flex-col">
-          <CardHeader title="Pemberitaan Isu Industri per Kategori" subtitle={`${formatNumber(total)} berita unik, 22 Sep – ${shortDate(lastDay)} 2026. Abu-abu: usulan tema baru. Klik batang untuk rincian`} />
+          <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, komposisi sentimen tiap cakupan (n di label). Klik batang untuk rincian`} />
           <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={430}>
-              <BarChart data={byIssue} layout="vertical" margin={{ left: 8, right: 56 }}>
+            <ResponsiveContainer width="100%" height={330}>
+              <BarChart data={byCoverage} layout="vertical" stackOffset="expand" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="label" width={130} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d: { idx?: number }) => typeof d.idx === 'number' && setSelected(d.idx)}>
-                  {byIssue.map((b) => (
-                    <Cell key={b.label} fill={b.outside ? GREY : BLUE} fillOpacity={b.idx === selected ? 1 : 0.55} />
-                  ))}
-                  <LabelList dataKey="count" position="right" fontSize={11} fill="#475569" formatter={(v: number) => formatNumber(v)} />
-                </Bar>
+                <XAxis type="number" tickFormatter={(v: number) => `${Math.round(v * 100)}%`} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="axis" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {SENTIMENTS.map((s, i) => (
+                  <Bar key={s} dataKey={'s' + i} name={s} stackId="s" fill={SENT_COLORS[i]} cursor="pointer" onClick={(row: { idx?: number }) => typeof row.idx === 'number' && setSelected(row.idx)}>
+                    {byCoverage.map((b) => (
+                      <Cell key={b.label} fillOpacity={b.idx === selected ? 1 : 0.6} />
+                    ))}
+                  </Bar>
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </CardBody>
         </Card>
 
         <Card className="flex flex-col">
-          <CardHeader title="Isu per minggu" subtitle="Jumlah berita per isu; warna lebih pekat = lebih ramai dibanding minggu lain pada isu yang sama" />
+          <CardHeader title="Cakupan per minggu" subtitle="Jumlah berita per cakupan; warna lebih pekat = lebih ramai dibanding minggu lain pada cakupan yang sama" />
           <CardBody className="flex-1">
             <table className="w-full table-fixed text-sm">
               <thead>
                 <tr className="text-[11px] font-medium text-slate-500">
-                  <th className="w-[34%] py-1.5 pr-2 text-left">Isu</th>
-                  {weekly.weeks.map((w, i) => (
+                  <th className="w-[34%] py-1.5 pr-2 text-left">Cakupan</th>
+                  {weeks.map((w, i) => (
                     <th key={w} className="px-1 py-1.5 text-center">
                       {shortDate(w)}
-                      {i === weekly.weeks.length - 1 && <span className="block text-[9px] font-normal text-slate-400">s/d {shortDate(lastDay)}</span>}
+                      {i === weeks.length - 1 && <span className="block text-[9px] font-normal text-slate-400">s/d {shortDate(lastDay)}</span>}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {byIssue.map((b) => {
-                  const row = weekly.grid[b.label] ?? {}
-                  const max = Math.max(1, ...weekly.weeks.map((w) => row[w] ?? 0))
+                {COVERAGES.map((c, ci) => {
+                  const max = Math.max(1, ...heat[ci])
                   return (
-                    <tr key={b.label}>
-                      <td className="py-1 pr-2 text-xs text-slate-700">{b.label}</td>
-                      {weekly.weeks.map((w) => {
-                        const v = row[w] ?? 0
+                    <tr key={c}>
+                      <td className="py-1 pr-2 text-xs text-slate-700">{c}</td>
+                      {heat[ci].map((v, wi) => {
                         const a = v / max
                         return (
-                          <td key={w} className="p-0.5">
-                            <div
-                              className="rounded py-1.5 text-center text-xs font-medium"
-                              style={{ backgroundColor: b.outside ? `rgba(148,163,184,${0.12 + a * 0.55})` : `rgba(22,84,122,${0.08 + a * 0.8})`, color: a > 0.55 ? '#fff' : '#334155' }}
-                            >
+                          <td key={wi} className="p-0.5">
+                            <div className="rounded py-2 text-center text-xs font-medium" style={{ backgroundColor: `rgba(22,84,122,${0.08 + a * 0.8})`, color: a > 0.55 ? '#fff' : '#334155' }}>
                               {v}
                             </div>
                           </td>
@@ -231,46 +274,55 @@ export default function IndustryIntelligence() {
       </div>
 
       <Card className="mb-5">
-        <CardHeader title={`Rincian tema: ${INDUSTRY_ISSUES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. Pilih tema lain dengan mengklik batang di grafik kategori`} />
+        <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]}`} />
         <CardBody>
+          <div className="mb-2 flex h-3 w-full overflow-hidden rounded">
+            {detail.sent.map((n, i) => (
+              <div key={i} style={{ width: `${(n / Math.max(1, detail.total)) * 100}%`, backgroundColor: SENT_COLORS[i] }} title={`${SENTIMENTS[i]}: ${n}`} />
+            ))}
+          </div>
+          <p className="mb-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+            {detail.sent.map((n, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: SENT_COLORS[i] }} />
+                {SENTIMENTS[i]} {formatNumber(n)} ({Math.round((n / Math.max(1, detail.total)) * 100)}%)
+              </span>
+            ))}
+          </p>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div>
-              {detail.slices.length >= 2 ? (
-                <div className="flex flex-col items-center gap-4 md:flex-row">
-                  <div className="relative h-52 w-52 shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={1} stroke="none">
-                          {detail.slices.map((_, i) => (
-                            <Cell key={i} fill={SLICES[i % SLICES.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
-                      <span className="text-[11px] text-slate-400">berita</span>
-                    </div>
-                  </div>
-                  <ul className="w-full space-y-2 text-xs">
-                    {detail.slices.map((sl, i) => (
-                      <li key={sl.name} className="flex items-center justify-between gap-3">
-                        <span className="flex items-center gap-2 text-slate-700">
-                          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: SLICES[i % SLICES.length] }} />
-                          {sl.name}
-                        </span>
-                        <span className="whitespace-nowrap text-slate-500">{formatNumber(sl.count)} · {Math.round((sl.count / detail.total) * 100)}%</span>
-                      </li>
-                    ))}
-                  </ul>
+            <div className="flex flex-col items-center gap-4 md:flex-row">
+              <div className="relative h-52 w-52 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={1} stroke="none">
+                      {detail.slices.map((_, i) => (
+                        <Cell key={i} fill={SLICES[i % SLICES.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
+                  <span className="text-[11px] text-slate-400">berita</span>
                 </div>
-              ) : (
-                <p className="text-sm text-slate-500">Tema ini terlalu kecil untuk dipecah lagi. Berita terbarunya ada di sebelah kanan.</p>
-              )}
+              </div>
+              <ul className="w-full space-y-1.5 text-xs">
+                {detail.slices.map((sl, i) => (
+                  <li key={sl.name} className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 text-slate-700">
+                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: SLICES[i % SLICES.length] }} />
+                      {sl.name}
+                    </span>
+                    <span className="whitespace-nowrap text-slate-500">
+                      {formatNumber(sl.count)} · {Math.round((sl.count / Math.max(1, detail.total)) * 100)}%
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Berita terbaru pada tema ini</p>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Berita terbaru pada cakupan ini</p>
               <ul className="divide-y divide-slate-100">
                 {detail.latest.map((r, k) => (
                   <li key={k} className="py-1.5 text-xs leading-snug">
@@ -279,7 +331,9 @@ export default function IndustryIntelligence() {
                     ) : (
                       <span className="text-slate-700">{r[3]}</span>
                     )}
-                    <span className="block text-[11px] text-slate-400">{shortDate(r[0])} · {industryMedia[r[1]]}{r[5] >= 0 ? ` · ${industrySubs[r[5]]}` : ''}</span>
+                    <span className="block text-[11px] text-slate-400">
+                      {shortDate(r[0])} · {industryMedia[r[1]]} · {SENTIMENTS[r[5]]}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -288,9 +342,49 @@ export default function IndustryIntelligence() {
         </CardBody>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="flex flex-col">
-          <CardHeader title="Volume harian" subtitle="Jumlah berita isu tambang emas per hari (satu judul dihitung sekali)" />
+          <CardHeader title="Sentimen per minggu" subtitle="Jumlah berita menurut sentimen. * minggu terakhir baru berjalan" />
+          <CardBody className="flex-1">
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={weeklySent} margin={{ left: -8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {SENTIMENTS.map((s, i) => (
+                  <Bar key={s} dataKey={s} stackId="w" fill={SENT_COLORS[i]} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </CardBody>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader title="Definisi sentimen" subtitle="Sudut pandang: bisnis dan operasional perusahaan tambang emas" />
+          <CardBody className="flex-1">
+            <ul className="space-y-3">
+              {SENTIMENTS.map((s, i) => (
+                <li key={s} className="flex gap-3 text-xs">
+                  <span className="mt-0.5 inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: SENT_COLORS[i] }} />
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      {s} <span className="font-normal text-slate-400">· {formatNumber(sentTotals[i])} berita</span>
+                    </p>
+                    <p className="text-slate-500">{SENTIMENT_HINT[i]}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-[11px] text-slate-400">Sentimen ditentukan dengan aturan kata kunci pada judul dan paragraf awal, bukan label dari file sumber.</p>
+          </CardBody>
+        </Card>
+      </div>
+
+      <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Card className="flex flex-col">
+          <CardHeader title="Volume harian" subtitle="Jumlah berita mining industry per hari (satu judul dihitung sekali)" />
           <CardBody className="flex-1">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={daily} margin={{ left: -8, right: 8 }}>
@@ -326,8 +420,7 @@ export default function IndustryIntelligence() {
         </Card>
       </div>
 
-
-      <Card className="mt-4">
+      <Card>
         <CardHeader title="Daftar Berita" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
         <CardBody>
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -335,18 +428,37 @@ export default function IndustryIntelligence() {
               <Search className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-slate-400" />
               <input
                 value={query}
-                onChange={(e) => { setQuery(e.target.value); setPage(0) }}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  setPage(0)
+                }}
                 placeholder="Cari judul atau media"
                 className="w-64 rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-sm outline-none focus:border-blue-400"
               />
             </div>
             <select
-              value={issueFilter}
-              onChange={(e) => { setIssueFilter(Number(e.target.value)); setPage(0) }}
+              value={covFilter}
+              onChange={(e) => {
+                setCovFilter(Number(e.target.value))
+                setPage(0)
+              }}
               className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700"
             >
-              <option value={-1}>Semua isu</option>
-              {INDUSTRY_ISSUES.map((n, i) => (
+              <option value={-1}>Semua cakupan</option>
+              {COVERAGES.map((n, i) => (
+                <option key={n} value={i}>{n}</option>
+              ))}
+            </select>
+            <select
+              value={senFilter}
+              onChange={(e) => {
+                setSenFilter(Number(e.target.value))
+                setPage(0)
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+            >
+              <option value={-1}>Semua sentimen</option>
+              {SENTIMENTS.map((n, i) => (
                 <option key={n} value={i}>{n}</option>
               ))}
             </select>
@@ -357,8 +469,9 @@ export default function IndustryIntelligence() {
                 <tr className="border-b border-slate-200 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                   <th className="w-24 py-2 pr-3">Tanggal</th>
                   <th className="py-2 pr-3">Judul</th>
-                  <th className="w-40 py-2 pr-3">Media</th>
-                  <th className="w-40 py-2">Isu</th>
+                  <th className="w-36 py-2 pr-3">Media</th>
+                  <th className="w-44 py-2 pr-3">Cakupan</th>
+                  <th className="w-32 py-2">Sentimen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -375,13 +488,16 @@ export default function IndustryIntelligence() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs text-slate-600">{industryMedia[r[1]]}</td>
+                    <td className="py-2 pr-3 text-xs text-slate-600">{COVERAGES[r[2]]}</td>
                     <td className="py-2 text-xs">
-                      <span className={INDUSTRY_OUTSIDE.includes(INDUSTRY_ISSUES[r[2]]) ? 'rounded-full bg-slate-100 px-2 py-0.5 text-slate-600' : 'rounded-full bg-blue-50 px-2 py-0.5 text-blue-800'}>{INDUSTRY_ISSUES[r[2]]}</span>
+                      <span className={`rounded-full px-2 py-0.5 ${SENT_BADGE[r[5]]}`}>{SENTIMENTS[r[5]]}</span>
                     </td>
                   </tr>
                 ))}
                 {shown.length === 0 && (
-                  <tr><td colSpan={4} className="py-6 text-center text-sm text-slate-400">Tidak ada berita yang cocok</td></tr>
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-sm text-slate-400">Tidak ada berita yang cocok</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -397,7 +513,7 @@ export default function IndustryIntelligence() {
       </Card>
 
       <p className="mt-4 text-xs text-slate-400">
-        Catatan: sentimen dari file sumber tidak dipakai. Tema abu-abu dan sub-tema adalah nama usulan, dibuat dengan aturan kata kunci. Kartu alert memakai seluruh berita tambang (tidak hanya yang berjudul emas). Berita disaring ke tambang emas (judul memuat emas, PETI, atau perusahaan emas) lalu dikelompokkan dengan aturan kata kunci; hasilnya perkiraan, masih bisa ada berita yang salah kategori.
+        Catatan: cakupan, sentimen, dan tema ditentukan dengan aturan kata kunci (perkiraan, bisa ada berita yang salah kelompok); label sentimen dari file sumber tidak dipakai. Batu bara, galian C, dan migas tidak dihitung. Kartu alert memakai seluruh berita tambang.
       </p>
     </div>
   )
