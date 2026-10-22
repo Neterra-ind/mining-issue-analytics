@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Newspaper, Radio, Layers, Filter } from 'lucide-react'
+import { Newspaper, Radio, Layers, Filter, ExternalLink, Search } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { KpiCard } from '@/components/ui/KpiCard'
@@ -21,7 +21,12 @@ function shortDate(iso: string) {
   return `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`
 }
 
+const PAGE = 25
+
 export default function IndustryIntelligence() {
+  const [issueFilter, setIssueFilter] = useState<number>(-1)
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
   const total = industryFeed.length
 
   const byIssue = useMemo(() => {
@@ -59,6 +64,12 @@ export default function IndustryIntelligence() {
   }, [])
   const topShare = media.top.reduce((s, r) => s + r.count, 0) / total
   const biggest = byIssue.filter((b) => !b.outside)[0]
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return industryFeed.filter((r) => (issueFilter < 0 || r[2] === issueFilter) && (!q || r[3].toLowerCase().includes(q) || industryMedia[r[1]].toLowerCase().includes(q)))
+  }, [issueFilter, query])
+  const pages = Math.max(1, Math.ceil(list.length / PAGE))
+  const shown = list.slice(page * PAGE, page * PAGE + PAGE)
   const lastDay = daily[daily.length - 1]?.date ?? ''
 
   return (
@@ -175,6 +186,76 @@ export default function IndustryIntelligence() {
           </CardBody>
         </Card>
       </div>
+
+
+      <Card className="mt-4">
+        <CardHeader title="Daftar Berita" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
+        <CardBody>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-slate-400" />
+              <input
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setPage(0) }}
+                placeholder="Cari judul atau media"
+                className="w-64 rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-sm outline-none focus:border-blue-400"
+              />
+            </div>
+            <select
+              value={issueFilter}
+              onChange={(e) => { setIssueFilter(Number(e.target.value)); setPage(0) }}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+            >
+              <option value={-1}>Semua isu</option>
+              {INDUSTRY_ISSUES.map((n, i) => (
+                <option key={n} value={i}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  <th className="w-24 py-2 pr-3">Tanggal</th>
+                  <th className="py-2 pr-3">Judul</th>
+                  <th className="w-40 py-2 pr-3">Media</th>
+                  <th className="w-40 py-2">Isu</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {shown.map((r, i) => (
+                  <tr key={i} className="align-top">
+                    <td className="whitespace-nowrap py-2 pr-3 text-xs text-slate-500">{shortDate(r[0])} {r[0].slice(0, 4)}</td>
+                    <td className="py-2 pr-3 text-slate-800">
+                      {r[4] ? (
+                        <a href={r[4]} target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline">
+                          {r[3]} <ExternalLink className="inline h-3 w-3 text-slate-400" />
+                        </a>
+                      ) : (
+                        r[3]
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-xs text-slate-600">{industryMedia[r[1]]}</td>
+                    <td className="py-2 text-xs">
+                      <span className={INDUSTRY_OUTSIDE.includes(INDUSTRY_ISSUES[r[2]]) ? 'rounded-full bg-slate-100 px-2 py-0.5 text-slate-600' : 'rounded-full bg-blue-50 px-2 py-0.5 text-blue-800'}>{INDUSTRY_ISSUES[r[2]]}</span>
+                    </td>
+                  </tr>
+                ))}
+                {shown.length === 0 && (
+                  <tr><td colSpan={4} className="py-6 text-center text-sm text-slate-400">Tidak ada berita yang cocok</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+            <span>Halaman {page + 1} dari {pages}</span>
+            <div className="flex gap-2">
+              <button disabled={page === 0} onClick={() => setPage(page - 1)} className="rounded border border-slate-200 px-3 py-1 disabled:opacity-40">Sebelumnya</button>
+              <button disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="rounded border border-slate-200 px-3 py-1 disabled:opacity-40">Berikutnya</button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       <p className="mt-4 text-xs text-slate-400">
         Catatan: sentimen dari file sumber tidak dipakai. Berita disaring ke tambang emas (judul memuat emas, PETI, atau perusahaan emas) lalu dikelompokkan dengan aturan kata kunci; hasilnya perkiraan, masih bisa ada berita yang salah kategori.
