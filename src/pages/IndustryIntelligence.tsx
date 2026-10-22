@@ -193,7 +193,7 @@ function IndustryView({ d }: { d: Feed }) {
 <Card className="flex flex-col">
           <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
           <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer width="100%" height={560}>
               <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
                 <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -214,10 +214,10 @@ function IndustryView({ d }: { d: Feed }) {
         <CardBody>
           <div className="grid grid-cols-1 gap-5">
             <div className="flex flex-col items-center gap-4 md:flex-row">
-              <div className="relative h-44 w-44 shrink-0">
+              <div className="relative h-60 w-60 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={46} outerRadius={80} paddingAngle={1} stroke="none" onClick={(_, i) => setTheme((t) => (t === detail.slices[i].idx ? null : detail.slices[i].idx))} style={{ cursor: 'pointer' }}>
+                    <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius="62%" outerRadius="100%" paddingAngle={1} stroke="none" onClick={(_, i) => setTheme((t) => (t === detail.slices[i].idx ? null : detail.slices[i].idx))} style={{ cursor: 'pointer' }}>
                       {detail.slices.map((_, i) => (
                         <Cell key={i} fill={SLICES[i % SLICES.length]} fillOpacity={theme === null || theme === detail.slices[i].idx ? 1 : 0.3} />
                       ))}
@@ -226,11 +226,11 @@ function IndustryView({ d }: { d: Feed }) {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
-                  <span className="text-[11px] text-slate-400">berita</span>
+                  <span className="text-3xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
+                  <span className="text-xs text-slate-400">berita</span>
                 </div>
               </div>
-              <ul className="w-full space-y-1.5 text-xs">
+              <ul className="flex w-full flex-col justify-between self-stretch text-xs md:h-60 md:self-auto">
                 {detail.slices.map((sl, i) => (
                   <li
                     key={sl.name}
