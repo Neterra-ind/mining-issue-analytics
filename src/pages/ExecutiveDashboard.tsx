@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { AlertTriangle, Flame, Newspaper, ShieldAlert, ThumbsDown, ThumbsUp, TrendingUp, Wallet } from 'lucide-react'
 import { useData } from '@/lib/store'
@@ -7,7 +7,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { FilterBar } from '@/components/FilterBar'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
-import { SentimentBadge, RiskBadge } from '@/components/ui/Badge'
+import { SentimentBadge, RiskBadge, PillarBadge } from '@/components/ui/Badge'
+import { CONCEPT, pillarAccounting } from '@/lib/boundaries'
 import { NewsDetailDrawer } from '@/components/news/NewsDetailDrawer'
 import {
   computeExecutiveKpis,
@@ -29,6 +30,7 @@ export default function ExecutiveDashboard() {
 
   const news = useMemo(() => filterNews(data.news, filters), [data.news, filters])
   const kpis = useMemo(() => computeExecutiveKpis(news, data.issues), [news, data.issues])
+  const accounting = useMemo(() => pillarAccounting(news), [news])
   const trend = useMemo(() => trendByDay(news), [news])
   const issues = useMemo(() => topIssues(news, data.issues, 5), [news, data.issues])
   const media = useMemo(() => mediaRanking(news, data.media, 5), [news, data.media])
@@ -46,6 +48,23 @@ export default function ExecutiveDashboard() {
 
       <div className="mb-5">
         <FilterBar filters={filters} onChange={setFilters} />
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+        <span className="font-medium text-slate-700">{CONCEPT.disclaimer}</span>
+        <span className="hidden h-3 w-px bg-slate-200 sm:block" />
+        <span>KPI dihitung dari pilar utama:</span>
+        {accounting.rows.map((r) => (
+          <span key={r.pillar} className="inline-flex items-center gap-1.5">
+            <PillarBadge pillar={r.pillar} /> {r.primary}
+          </span>
+        ))}
+        <span className={accounting.balanced ? 'text-emerald-600' : 'font-medium text-red-600'}>
+          = {accounting.sumPrimary} dari {accounting.total} berita {accounting.balanced ? '✓' : '(tidak seimbang)'}
+        </span>
+        <Link to="/data/boundaries" className="ml-auto font-medium text-blue-600 hover:underline">
+          Batasan & Definisi →
+        </Link>
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-4">

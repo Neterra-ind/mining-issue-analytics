@@ -1,11 +1,11 @@
-import type { AppData, GlobalFilters, NewsItem, RiskLevel, Sentiment } from '@/types'
+import type { AppData, GlobalFilters, Issue, NewsItem, RiskLevel, Sentiment } from '@/types'
 import { groupBy, percentage } from '@/lib/utils'
 
 export const RISK_WEIGHT: Record<RiskLevel, number> = { Low: 1, Moderate: 2, High: 3, Critical: 4 }
 
 export const emptyFilters = (): GlobalFilters => ({
   dateFrom: '2026-06-01',
-  dateTo: '2026-08-31',
+  dateTo: '2026-10-31',
   pillar: 'All',
   companyId: 'All',
   region: 'All',
@@ -128,6 +128,7 @@ export function influencerRanking(news: NewsItem[], influencers: AppData['influe
   const issueMap = new Map(issues.map((i) => [i.id, i]))
   const rows: InfluencerAgg[] = []
   for (const [actor, items] of byActor) {
+    if (!actor.trim()) continue // berita tanpa aktor tercatat (data pantauan nyata) tidak masuk peringkat
     const issueCounts = groupBy(items, (n) => n.issueId)
     let topIssueId = ''
     let topCount = 0
@@ -294,6 +295,139 @@ export function competitorBenchmark(news: NewsItem[], companies: AppData['compan
     })
   }
   return rows.sort((a, b) => b.newsVolume - a.newsVolume)
+}
+
+/* ── Industry issue monitoring (non-corporate) ───────────────────────────
+ * General issue-monitoring view of Industry-pillar coverage that is NOT tied
+ * to a specific company (companyId === null): policy, production, downstreaming,
+ * illegal mining, export rules, etc. Not a PR/comms lens — this tracks how each
+ * issue is developing: coverage volume, recency, risk mix, sentiment, spread,
+ * and a rule-derived monitoring status. */
+
+export type MonitorPriority = 'Kritis' | 'Tinggi' | 'Sedang' | 'Rendah'
+
+const RISK_ORDER: RiskLevel[] = ['Critical', 'High', 'Moderate', 'Low']
+
+/** Recency window (days) counted back from the latest item in scope. */
+const RECENT_WINDOW_DAYS = 21
+
+function deriveMonitorStatus(maxRisk: RiskLevel, trend: Issue['trend']): { priority: MonitorPriority; rank: number } {
+  if (maxRisk === 'Critical') return { priority: 'Kritis', rank: 4 }
+  if (maxRisk === 'High') return { priority: 'Tinggi', rank: 3 }
+  if (maxRisk === 'Moderate') return trend === 'up' ? { priority: 'Tinggi', rank: 3 } : { priority: 'Sedang', rank: 2 }
+  return trend === 'up' ? { priority: 'Sedang', rank: 2 } : { priority: 'Rendah', rank: 1 }
+}
+
+export interface IssueWatchCluster {
+  issue: Issue
+  count: number
+  recentCount: number
+  sentiment: SentimentCounts
+  risk: Record<RiskLevel, number>
+  maxRisk: RiskLevel
+  highRiskCount: number
+  mediaCount: number
+  stakeholderCount: number
+  trend: Issue['trend']
+  priority: MonitorPriority
+  priorityRank: number
+}
+
+export interface IssueCategoryRollup {
+  category: string
+  count: number
+  risk: Record<RiskLevel, number>
+  /** Highest risk level present in this category's coverage; null when count === 0. */
+  maxRisk: RiskLevel | null
+  sentiment: SentimentCounts
+}
+
+export interface IssueMonitoringOverview {
+  scope: NewsItem[]
+  clusters: IssueWatchCluster[]
+  /** One entry per issue category used by any Industry issue (the shared category set),
+   *  rolled up over `scope`. Categories with no coverage in scope stay at zero. */
+  categories: IssueCategoryRollup[]
+  totalItems: number
+  highRiskItems: number
+  risingIssues: number
+  recentCutoff: string | null
+  sentiment: SentimentCounts
+}
+
+export function issueMonitoringOverview(news: NewsItem[], issues: Issue[]): IssueMonitoringOverview {
+  const scope = news.filter((n) => n.pillar === 'Industry' && n.companyId === null)
+  const latest = scope.reduce<string | null>((max, n) => (max === null || n.date > max ? n.date : max), null)
+  let recentCutoff: string | null = null
+  if (latest) {
+    const d = new Date(latest)
+    d.setDate(d.getDate() - RECENT_WINDOW_DAYS)
+    recentCutoff = d.toISOString().slice(0, 10)
+  }
+
+  const issueMap = new Map(issues.map((i) => [i.id, i]))
+  const clusters: IssueWatchCluster[] = []
+  for (const [issueId, items] of groupBy(scope, (n) => n.issueId)) {
+    const issue = issueMap.get(issueId)
+    if (!issue) continue
+    const risk: Record<RiskLevel, number> = { Low: 0, Moderate: 0, High: 0, Critical: 0 }
+    for (const n of items) risk[n.risk]++
+    const maxRisk = RISK_ORDER.find((r) => risk[r] > 0) ?? 'Low'
+    const { priority, rank } = deriveMonitorStatus(maxRisk, issue.trend)
+    clusters.push({
+      issue,
+      count: items.length,
+      recentCount: recentCutoff ? items.filter((n) => n.date >= recentCutoff!).length : 0,
+      sentiment: sentimentBreakdown(items),
+      risk,
+      maxRisk,
+      highRiskCount: risk.High + risk.Critical,
+      mediaCount: new Set(items.map((n) => n.mediaId)).size,
+      stakeholderCount: new Set(items.flatMap((n) => n.stakeholders)).size,
+      trend: issue.trend,
+      priority,
+      priorityRank: rank,
+    })
+  }
+  clusters.sort((a, b) => b.priorityRank - a.priorityRank || b.count - a.count)
+
+  // Shared category set: every category used by an Industry-pillar issue (used by all
+  // issue-per-category widgets on this page so they stay in sync). Rolled up over scope.
+  const emptyRisk = (): Record<RiskLevel, number> => ({ Low: 0, Moderate: 0, High: 0, Critical: 0 })
+  const categoryMap = new Map<string, IssueCategoryRollup>()
+  for (const i of issues) {
+    if (i.pillar === 'Industry' && !categoryMap.has(i.category)) {
+      categoryMap.set(i.category, { category: i.category, count: 0, risk: emptyRisk(), maxRisk: null, sentiment: { positive: 0, neutral: 0, negative: 0, total: 0 } })
+    }
+  }
+  for (const c of clusters) {
+    const entry = categoryMap.get(c.issue.category)
+    if (!entry) continue
+    entry.count += c.count
+    entry.risk.Low += c.risk.Low
+    entry.risk.Moderate += c.risk.Moderate
+    entry.risk.High += c.risk.High
+    entry.risk.Critical += c.risk.Critical
+    entry.sentiment.positive += c.sentiment.positive
+    entry.sentiment.neutral += c.sentiment.neutral
+    entry.sentiment.negative += c.sentiment.negative
+    entry.sentiment.total += c.sentiment.total
+  }
+  for (const entry of categoryMap.values()) {
+    entry.maxRisk = RISK_ORDER.find((r) => entry.risk[r] > 0) ?? null
+  }
+  const categories = [...categoryMap.values()].sort((a, b) => b.count - a.count || a.category.localeCompare(b.category))
+
+  return {
+    scope,
+    clusters,
+    categories,
+    totalItems: scope.length,
+    highRiskItems: scope.filter((n) => n.risk === 'High' || n.risk === 'Critical').length,
+    risingIssues: clusters.filter((c) => c.trend === 'up').length,
+    recentCutoff,
+    sentiment: sentimentBreakdown(scope),
+  }
 }
 
 export function uniqueRegions(news: NewsItem[]): string[] {

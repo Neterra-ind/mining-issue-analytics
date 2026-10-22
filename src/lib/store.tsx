@@ -3,26 +3,47 @@ import type { AppData, Company, Influencer, MediaOutlet, NewsItem, TaxonomyCateg
 import { newsSeed } from '@/data/news'
 import { companiesSeed, influencersSeed, issuesSeed, mediaSeed } from '@/data/entities'
 import { taxonomySeed } from '@/data/taxonomy'
+import { INCLUDE_DEMO_NEWS, ptarIssues, ptarMedia, ptarNews } from '@/data/ptarReal'
 import { uid } from '@/lib/utils'
 
-const STORAGE_KEY = 'midash:v1'
+// v3: menambahkan data berita nyata PT AR (src/data/ptarReal.ts).
+// v2: data seed mengikuti batasan konsep (pilar terkait, status kebijakan, bingkai ESG).
+const STORAGE_KEY = 'midash:v3'
+const LEGACY_KEYS = ['midash:v1', 'midash:v2']
 
 function freshSeed(): AppData {
   return {
-    news: structuredClone(newsSeed),
+    news: structuredClone(INCLUDE_DEMO_NEWS ? [...ptarNews, ...newsSeed] : ptarNews),
     companies: structuredClone(companiesSeed),
-    media: structuredClone(mediaSeed),
+    media: structuredClone(INCLUDE_DEMO_NEWS ? [...mediaSeed, ...ptarMedia] : ptarMedia),
     influencers: structuredClone(influencersSeed),
-    issues: structuredClone(issuesSeed),
+    issues: structuredClone(INCLUDE_DEMO_NEWS ? [...issuesSeed, ...ptarIssues] : ptarIssues),
     taxonomy: structuredClone(taxonomySeed),
     dashboardConfig: {},
   }
 }
 
+/** Seed baru, tetapi teks yang sudah diedit pengguna (dashboardConfig) dari versi lama tetap dibawa. */
+function migrateLegacy(): AppData {
+  const seed = freshSeed()
+  for (const key of LEGACY_KEYS) {
+    try {
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+      const legacy = JSON.parse(raw) as Partial<AppData>
+      if (legacy.dashboardConfig) seed.dashboardConfig = legacy.dashboardConfig
+      localStorage.removeItem(key)
+    } catch {
+      // abaikan data lama yang rusak
+    }
+  }
+  return seed
+}
+
 function loadInitial(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return freshSeed()
+    if (!raw) return migrateLegacy()
     const parsed = JSON.parse(raw) as AppData
     if (!parsed.news || !parsed.companies) return freshSeed()
     return parsed

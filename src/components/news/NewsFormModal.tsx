@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { MediaType, NewsItem, Pillar, RiskLevel, Sentiment } from '@/types'
+import type { EsgFrame, MediaType, NewsItem, Pillar, PolicyStatus, RiskLevel, Sentiment } from '@/types'
 import { useData } from '@/lib/store'
+import { ESG_FRAMES, MAX_RELATED_PILLARS, PILLARS, POLICY_STATUSES, PRIMARY_COMPANY_ID, normalizeRelatedPillars } from '@/lib/boundaries'
 import { Modal } from '@/components/ui/Modal'
 
 interface FormState {
@@ -11,6 +12,9 @@ interface FormState {
   mediaId: string
   companyId: string
   pillar: Pillar
+  relatedPillars: Pillar[]
+  policyStatus: PolicyStatus | ''
+  esgFrame: EsgFrame | ''
   topics: string
   issueId: string
   location: string
@@ -32,6 +36,9 @@ function toFormState(news: NewsItem | null): FormState {
       mediaId: '',
       companyId: '',
       pillar: 'Industry',
+      relatedPillars: [],
+      policyStatus: '',
+      esgFrame: '',
       topics: '',
       issueId: '',
       location: '',
@@ -51,6 +58,9 @@ function toFormState(news: NewsItem | null): FormState {
     mediaId: news.mediaId,
     companyId: news.companyId ?? '',
     pillar: news.pillar,
+    relatedPillars: normalizeRelatedPillars(news.pillar, news.relatedPillars),
+    policyStatus: news.policyStatus ?? '',
+    esgFrame: news.esgFrame ?? '',
     topics: news.topics.join(', '),
     issueId: news.issueId,
     location: news.location,
@@ -88,6 +98,17 @@ export function NewsFormModal({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  const canHavePolicyStatus = form.pillar === 'Industry'
+  const canHaveEsgFrame = form.pillar === 'ESG' && form.companyId === PRIMARY_COMPANY_ID
+
+  function toggleRelated(p: Pillar) {
+    setForm((prev) => {
+      const has = prev.relatedPillars.includes(p)
+      const next = has ? prev.relatedPillars.filter((x) => x !== p) : [...prev.relatedPillars, p]
+      return { ...prev, relatedPillars: normalizeRelatedPillars(prev.pillar, next) }
+    })
+  }
+
   function handleSubmit() {
     if (!form.title.trim() || !form.mediaId || !form.issueId) return
     const media = data.media.find((m) => m.id === form.mediaId)
@@ -100,6 +121,9 @@ export function NewsFormModal({
       mediaType: media?.type ?? ('Online' as MediaType),
       companyId: form.companyId || null,
       pillar: form.pillar,
+      relatedPillars: normalizeRelatedPillars(form.pillar, form.relatedPillars),
+      policyStatus: canHavePolicyStatus && form.policyStatus ? form.policyStatus : undefined,
+      esgFrame: canHaveEsgFrame && form.esgFrame ? form.esgFrame : undefined,
       topics: form.topics.split(',').map((t) => t.trim()).filter(Boolean),
       issueId: form.issueId,
       location: form.location.trim() || 'Nasional',
@@ -174,8 +198,15 @@ export function NewsFormModal({
           </select>
         </div>
         <div>
-          <label className={labelClass}>Pilar</label>
-          <select className={inputClass} value={form.pillar} onChange={(e) => set('pillar', e.target.value as Pillar)}>
+          <label className={labelClass}>Pilar utama (dihitung di KPI)</label>
+          <select
+            className={inputClass}
+            value={form.pillar}
+            onChange={(e) => {
+              const pillar = e.target.value as Pillar
+              setForm((prev) => ({ ...prev, pillar, relatedPillars: normalizeRelatedPillars(pillar, prev.relatedPillars), issueId: '' }))
+            }}
+          >
             <option value="Industry">Industry</option>
             <option value="ESG">ESG</option>
             <option value="Corporate">Corporate</option>
@@ -192,6 +223,43 @@ export function NewsFormModal({
             ))}
           </select>
         </div>
+        <div className="col-span-2">
+          <label className={labelClass}>Pilar terkait (maks. {MAX_RELATED_PILLARS}, tidak dihitung di KPI)</label>
+          <div className="flex flex-wrap gap-3 pt-1">
+            {PILLARS.filter((p) => p !== form.pillar).map((p) => (
+              <label key={p} className="inline-flex items-center gap-1.5 text-sm text-slate-700">
+                <input type="checkbox" checked={form.relatedPillars.includes(p)} onChange={() => toggleRelated(p)} />
+                {p}
+              </label>
+            ))}
+          </div>
+        </div>
+        {canHavePolicyStatus && (
+          <div>
+            <label className={labelClass}>Status kebijakan (jika berita regulasi)</label>
+            <select className={inputClass} value={form.policyStatus} onChange={(e) => set('policyStatus', e.target.value as PolicyStatus | '')}>
+              <option value="">Bukan berita kebijakan</option>
+              {POLICY_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {canHaveEsgFrame && (
+          <div>
+            <label className={labelClass}>Bingkai ESG terhadap PT AR</label>
+            <select className={inputClass} value={form.esgFrame} onChange={(e) => set('esgFrame', e.target.value as EsgFrame | '')}>
+              <option value="">Belum ditentukan</option>
+              {ESG_FRAMES.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="col-span-2">
           <label className={labelClass}>Topic (pisahkan dengan koma)</label>
           <input className={inputClass} value={form.topics} onChange={(e) => set('topics', e.target.value)} placeholder="Environment, ESG Reporting" />
