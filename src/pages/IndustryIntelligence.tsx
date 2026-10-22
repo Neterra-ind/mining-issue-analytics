@@ -59,6 +59,7 @@ function IndustryView({ d }: { d: Feed }) {
   useEffect(() => setTheme(null), [selected])
   const [openAlert, setOpenAlert] = useState<number | null>(null)
   const [covFilter, setCovFilter] = useState(-1)
+  const [themeFilter, setThemeFilter] = useState(-1)
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
 
@@ -127,9 +128,9 @@ function IndustryView({ d }: { d: Feed }) {
   const list = useMemo(() => {
     const q = query.trim().toLowerCase()
     return industryFeed.filter(
-      (r) => (covFilter < 0 || r[2] === covFilter) && (!q || r[3].toLowerCase().includes(q) || industryMedia[r[1]].toLowerCase().includes(q)),
+      (r) => (covFilter < 0 || r[2] === covFilter) && (themeFilter < 0 || r[5] === themeFilter) && (!q || r[3].toLowerCase().includes(q) || industryMedia[r[1]].toLowerCase().includes(q)),
     )
-  }, [industryFeed, industryMedia, covFilter, query])
+  }, [industryFeed, industryMedia, covFilter, themeFilter, query])
   const pages = Math.max(1, Math.ceil(list.length / PAGE))
   const shown = list.slice(page * PAGE, page * PAGE + PAGE)
   const biggest = [...byCoverage].sort((a, b) => b.total - a.total)[0]
@@ -191,12 +192,12 @@ function IndustryView({ d }: { d: Feed }) {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
 <Card className="flex flex-col">
-          <CardHeader title="Distribusi Cakupan Pemberitaan" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
+          <CardHeader title="Distribusi Cakupan Pemberitaan" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan (skala akar agar cakupan kecil terbaca). Klik batang untuk rincian`} />
           <CardBody className="flex-1">
             <ResponsiveContainer width="100%" height={560}>
               <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <XAxis type="number" scale="sqrt" domain={[0, 'auto']} allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="label" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
                 <Bar dataKey="total" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(row: { idx?: number }) => typeof row.idx === 'number' && setSelected(row.idx)}>
@@ -254,9 +255,24 @@ function IndustryView({ d }: { d: Feed }) {
                   {theme === null ? 'Pemberitaan Terkini' : `Pemberitaan Terkini: ${INDUSTRY_THEMES[theme]}`}
                 </p>
                 {theme !== null && (
-                  <button type="button" onClick={() => setTheme(null)} className="text-[11px] text-blue-700 hover:underline">
-                    Tampilkan semua
-                  </button>
+                  <span className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCovFilter(selected)
+                        setThemeFilter(theme)
+                        setQuery('')
+                        setPage(0)
+                        document.getElementById('arsip-pemberitaan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }}
+                      className="text-[11px] font-medium text-blue-700 hover:underline"
+                    >
+                      Lihat semua {formatNumber(detail.slices.find((x) => x.idx === theme)?.count ?? 0)} berita
+                    </button>
+                    <button type="button" onClick={() => setTheme(null)} className="text-[11px] text-slate-500 hover:underline">
+                      Reset
+                    </button>
+                  </span>
                 )}
               </div>
               <ul className={`divide-y divide-slate-100 ${theme !== null ? 'max-h-72 overflow-y-auto' : ''}`}>
@@ -318,6 +334,7 @@ function IndustryView({ d }: { d: Feed }) {
           </CardBody>
         </Card>
 
+      <div id="arsip-pemberitaan">
       <Card>
         <CardHeader title="Arsip Pemberitaan" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
         <CardBody>
@@ -344,6 +361,19 @@ function IndustryView({ d }: { d: Feed }) {
             >
               <option value={-1}>Semua cakupan</option>
               {COVERAGES.map((n, i) => (
+                <option key={n} value={i}>{n}</option>
+              ))}
+            </select>
+            <select
+              value={themeFilter}
+              onChange={(e) => {
+                setThemeFilter(Number(e.target.value))
+                setPage(0)
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+            >
+              <option value={-1}>Semua tema</option>
+              {INDUSTRY_THEMES.map((n, i) => (
                 <option key={n} value={i}>{n}</option>
               ))}
             </select>
@@ -392,6 +422,7 @@ function IndustryView({ d }: { d: Feed }) {
           </div>
         </CardBody>
       </Card>
+      </div>
 
       <p className="mt-4 text-xs text-slate-400">
         Catatan: cakupan dan tema ditentukan dengan aturan kata kunci (perkiraan, bisa ada berita yang salah kelompok); sentimen tidak dipakai. Batu bara, galian C, dan migas tidak dihitung. Kartu alert memakai seluruh berita tambang.

@@ -107,7 +107,7 @@ export default function EsgIntelligence() {
       </div>
 
       <Card className="mb-5">
-        <CardHeader title="Bingkai ESG terhadap PT AR" subtitle="Cara media membingkai PT AR pada berita berpilar utama ESG" />
+        <CardHeader title="Bingkai Pemberitaan ESG" subtitle="Cara media membingkai PT AR pada berita berpilar utama ESG" />
         <CardBody className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {ESG_FRAMES.map((frame) => (
             <div key={frame} className="rounded-lg border border-slate-100 p-3">

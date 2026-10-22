@@ -221,7 +221,7 @@ export default function CorporateReputation() {
       <div className={`mb-5 grid grid-cols-1 gap-4 ${companyId === 'co-ptar' ? 'xl:grid-cols-2' : ''}`}>
         {companyId === 'co-ptar' && <PtarFeedPanel />}
         <Card>
-          <CardHeader title="Media Share per Tier" subtitle="Jumlah pemberitaan per tier media, dipilah menurut sentimen" />
+          <CardHeader title="Media per Tier" subtitle="Jumlah pemberitaan per tier media, dipilah menurut sentimen" />
           <CardBody>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={tierChart} margin={{ top: 20, right: 8, left: -16 }}>
