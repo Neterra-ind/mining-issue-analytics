@@ -67,7 +67,10 @@ export function ReputationOverview({
     const byIssue = new Map<string, NewsItem[]>()
     for (const n of news) byIssue.set(n.issueId, [...(byIssue.get(n.issueId) ?? []), n])
     return [...byIssue.entries()]
-      .map(([issueId, items]) => ({ issueId, name: issues.find((i) => i.id === issueId)?.name ?? issueId, items }))
+      .map(([issueId, items]) => {
+        const dates = items.map((n) => ts(n.date))
+        return { issueId, name: issues.find((i) => i.id === issueId)?.name ?? issueId, items, start: Math.min(...dates), end: Math.max(...dates) }
+      })
       .sort((a, b) => b.items.length - a.items.length)
   }, [news, issues])
 
@@ -96,6 +99,9 @@ export function ReputationOverview({
   }, [news])
 
   const issueRows = lanes.slice(0, 8)
+  // Rentang isu: 8 isu terbanyak, diurutkan menurut berita pertamanya.
+  const spanRows = [...issueRows].sort((a, b) => a.start - b.start)
+  const pct = (t: number) => ((t - range.min) / (range.max - range.min)) * 100
   const maxSide = Math.max(1, ...issueRows.map((l) => Math.max(count(l.items, 'Negative'), count(l.items, 'Positive'))))
 
   if (!total) {
@@ -146,34 +152,40 @@ export function ReputationOverview({
       </div>
 
       <Card>
-        <CardHeader title="Linimasa isu" subtitle="Satu baris per isu; setiap titik adalah satu berita, diwarnai menurut nada. Klik nama isu untuk detail." />
+        <CardHeader title="Rentang isu" subtitle="Satu batang per isu, dari berita pertama sampai terakhir; titik adalah satu berita, diwarnai menurut nada. Klik nama isu untuk detail." />
         <CardBody>
           <Legend />
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">
-              <div className="mb-1 grid grid-cols-[160px_minmax(0,1fr)] gap-3 text-[11px] text-slate-500">
+              <div className="mb-1 grid grid-cols-[160px_minmax(0,1fr)_56px] gap-3 text-[11px] text-slate-500">
                 <span />
                 <div className="flex justify-between">
                   <span>{fmtDay(range.min)}</span>
                   <span>{fmtDay(range.max)}</span>
                 </div>
+                <span className="text-right">Rentang</span>
               </div>
-              {lanes.slice(0, 8).map((l) => (
-                <div key={l.issueId} className="grid h-12 grid-cols-[160px_minmax(0,1fr)] items-center gap-3 border-t border-slate-100">
+              {spanRows.map((l) => (
+                <div key={l.issueId} className="grid h-12 grid-cols-[160px_minmax(0,1fr)_56px] items-center gap-3 border-t border-slate-100">
                   <button onClick={() => onOpenIssue(l.issueId)} className="line-clamp-2 text-left text-xs font-medium text-slate-800 hover:underline" title={l.name}>
                     {l.name}
                   </button>
                   <div className="relative h-12">
-                    <div className="absolute inset-x-0 top-1/2 h-px bg-slate-200" />
+                    <div
+                      className="absolute top-1/2 h-3 -translate-y-1/2 rounded-full bg-slate-200"
+                      style={{ left: `${pct(l.start)}%`, width: `max(${pct(l.end) - pct(l.start)}%, 12px)` }}
+                      title={`${fmtDay(l.start)} – ${fmtDay(l.end)}`}
+                    />
                     {l.items.map((n) => (
                       <span
                         key={n.id}
                         title={`${n.date} · ${LABEL[n.sentiment]} · ${n.title}`}
                         className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white"
-                        style={{ left: `${((ts(n.date) - range.min) / (range.max - range.min)) * 100}%`, backgroundColor: COLOR[n.sentiment] }}
+                        style={{ left: `${pct(ts(n.date))}%`, backgroundColor: COLOR[n.sentiment] }}
                       />
                     ))}
                   </div>
+                  <span className="text-right text-xs text-slate-600">{Math.round((l.end - l.start) / DAY) + 1} hari</span>
                 </div>
               ))}
             </div>
