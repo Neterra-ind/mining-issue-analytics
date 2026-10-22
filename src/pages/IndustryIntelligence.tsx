@@ -185,6 +185,25 @@ function IndustryView({ d }: { d: Feed }) {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
 <Card className="flex flex-col">
+          <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
+          <CardBody className="flex-1">
+            <ResponsiveContainer width="100%" height={500}>
+              <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="label" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
+                <Bar dataKey="total" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(row: { idx?: number }) => typeof row.idx === 'number' && setSelected(row.idx)}>
+                  {byCoverage.map((b) => (
+                    <Cell key={b.label} fill={BLUE} fillOpacity={b.idx === selected ? 1 : 0.55} />
+                  ))}
+                  <LabelList dataKey="total" position="right" fontSize={11} fill="#475569" formatter={(v: number) => formatNumber(v)} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardBody>
+        </Card>
+<Card className="flex flex-col">
         <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]}`} />
         <CardBody>
           <div className="grid grid-cols-1 gap-5">
@@ -239,25 +258,6 @@ function IndustryView({ d }: { d: Feed }) {
           </div>
         </CardBody>
       </Card>
-<Card className="flex flex-col">
-          <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
-          <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={500}>
-              <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="label" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
-                <Bar dataKey="total" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(row: { idx?: number }) => typeof row.idx === 'number' && setSelected(row.idx)}>
-                  {byCoverage.map((b) => (
-                    <Cell key={b.label} fill={BLUE} fillOpacity={b.idx === selected ? 1 : 0.55} />
-                  ))}
-                  <LabelList dataKey="total" position="right" fontSize={11} fill="#475569" formatter={(v: number) => formatNumber(v)} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardBody>
-        </Card>
 </div>
 
       <div className="mb-5 grid grid-cols-1 gap-4">
