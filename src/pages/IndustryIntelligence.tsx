@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Newspaper, Radio, Layers, AlertOctagon, ExternalLink, Search, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
@@ -78,14 +78,6 @@ function IndustryView({ d }: { d: Feed }) {
     }
     return { cur, prev }
   }, [industryFeed, lastDay])
-
-  const daily = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const r of industryFeed) m.set(r[0], (m.get(r[0]) ?? 0) + 1)
-    return Array.from(m.entries())
-      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-      .map(([date, count]) => ({ date, label: shortDate(date), count }))
-  }, [industryFeed])
 
   const media = useMemo(() => {
     const m = new Map<number, number>()
@@ -185,25 +177,6 @@ function IndustryView({ d }: { d: Feed }) {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
 <Card className="flex flex-col">
-          <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
-          <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={500}>
-              <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="label" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
-                <Bar dataKey="total" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(row: { idx?: number }) => typeof row.idx === 'number' && setSelected(row.idx)}>
-                  {byCoverage.map((b) => (
-                    <Cell key={b.label} fill={BLUE} fillOpacity={b.idx === selected ? 1 : 0.55} />
-                  ))}
-                  <LabelList dataKey="total" position="right" fontSize={11} fill="#475569" formatter={(v: number) => formatNumber(v)} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardBody>
-        </Card>
-<Card className="flex flex-col">
         <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]}`} />
         <CardBody>
           <div className="grid grid-cols-1 gap-5">
@@ -258,24 +231,25 @@ function IndustryView({ d }: { d: Feed }) {
           </div>
         </CardBody>
       </Card>
-</div>
-
-      <div className="mb-5 grid grid-cols-1 gap-4">
 <Card className="flex flex-col">
-          <CardHeader title="Volume harian" subtitle="Jumlah berita mining industry per hari (satu judul dihitung sekali)" />
+          <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
           <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={daily} margin={{ left: -8, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${v} berita`, 'Jumlah']} />
-                <Line type="monotone" dataKey="count" stroke={BLUE} strokeWidth={2} dot={false} />
-              </LineChart>
+            <ResponsiveContainer width="100%" height={500}>
+              <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="label" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
+                <Bar dataKey="total" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(row: { idx?: number }) => typeof row.idx === 'number' && setSelected(row.idx)}>
+                  {byCoverage.map((b) => (
+                    <Cell key={b.label} fill={BLUE} fillOpacity={b.idx === selected ? 1 : 0.55} />
+                  ))}
+                  <LabelList dataKey="total" position="right" fontSize={11} fill="#475569" formatter={(v: number) => formatNumber(v)} />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </CardBody>
         </Card>
-
 </div>
 
       <Card>
