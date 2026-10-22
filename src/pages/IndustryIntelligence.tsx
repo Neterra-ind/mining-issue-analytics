@@ -13,10 +13,10 @@ const SLICES = ['#16547A', '#2E7DB0', '#6FA8CF', '#A9C8E0', '#94a3b8', '#E28A2B'
 
 /** Kartu alert untuk PT AR. Batas: jumlah berita dalam 7 hari terakhir yang memicu status. */
 const ALERT_CARDS = [
-  { title: 'Menyebut PT AR / Martabe langsung', desc: 'Berita yang memuat Agincourt, PTAR, Martabe atau Batang Toru: operasi, lingkungan, hubungan dengan warga.', rule: 'Tinggi bila ≥1 berita dalam 7 hari terakhir', high: 1, warn: 1 },
-  { title: 'Kebijakan nasional untuk produsen emas', desc: 'HPE/harga patokan emas, royalti, PNBP minerba, DHE, bea keluar, Satgas PKH, izin tambang prioritas, Permen ESDM.', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥10', high: 10, warn: 3 },
-  { title: 'PETI & tekanan sosial di sekitar wilayah', desc: 'Peti, penertiban, korban, dan aksi warga di Tapsel, Madina, dan Sumatera Utara (sekitar wilayah operasi).', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥8', high: 8, warn: 3 },
-  { title: 'Pelajaran dari perusahaan sejenis', desc: 'Pemulihan Grasberg (Freeport) dan PETI di konsesi Amman: pembanding risiko operasional.', rule: 'Waspada bila ≥1 berita dalam 7 hari', high: 99, warn: 1 },
+  { title: 'Pemberitaan Langsung PT AR / Martabe', desc: 'Berita yang memuat Agincourt, PTAR, Martabe atau Batang Toru: operasi, lingkungan, hubungan dengan warga.', rule: 'Tinggi bila ≥1 berita dalam 7 hari terakhir', high: 1, warn: 1 },
+  { title: 'Kebijakan Nasional Sektor Emas', desc: 'HPE/harga patokan emas, royalti, PNBP minerba, DHE, bea keluar, Satgas PKH, izin tambang prioritas, Permen ESDM.', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥10', high: 10, warn: 3 },
+  { title: 'PETI & Dinamika Sosial Wilayah Operasi', desc: 'Peti, penertiban, korban, dan aksi warga di Tapsel, Madina, dan Sumatera Utara (sekitar wilayah operasi).', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥8', high: 8, warn: 3 },
+  { title: 'Benchmark Kejadian Perusahaan Sejenis', desc: 'Pemulihan Grasberg (Freeport) dan PETI di konsesi Amman: pembanding risiko operasional.', rule: 'Waspada bila ≥1 berita dalam 7 hari', high: 99, warn: 1 },
 ] as const
 const LEVEL_STYLE = {
   Tinggi: 'bg-orange-500 text-white',
@@ -139,16 +139,16 @@ function IndustryView({ d }: { d: Feed }) {
       <PageHeader configKey="industry.title" title="Mining Industry" subtitleKey="industry.subtitle" subtitle="Pemberitaan industri pertambangan yang perlu diperhatikan, dengan fokus pada tambang emas." />
 
       <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard label="Berita mining industry" value={formatNumber(total)} icon={Newspaper} tone="blue" hint={`dari ${formatNumber(INDUSTRY_STATS.miningAll)} berita tambang, tanpa batu bara`} />
-        <KpiCard label="Berita 7 hari terakhir" value={formatNumber(recent.cur)} icon={AlertOctagon} tone="amber" hint={`${recent.cur >= recent.prev ? '▲' : '▼'} dibanding ${formatNumber(recent.prev)} pada 7 hari sebelumnya`} />
-        <KpiCard label="Cakupan terbesar" value={biggest.label.split(' & ')[0]} icon={Layers} tone="slate" hint={`${formatNumber(biggest.total)} berita (${Math.round((biggest.total / total) * 100)}%)`} />
-        <KpiCard label="Media" value={formatNumber(media.total)} icon={Radio} tone="slate" hint={`10 teratas hanya ${Math.round(topShare * 100)}% berita`} />
+        <KpiCard label="Total Pemberitaan Industri" value={formatNumber(total)} icon={Newspaper} tone="blue" hint={`dari ${formatNumber(INDUSTRY_STATS.miningAll)} berita tambang, tanpa batu bara`} />
+        <KpiCard label="Pemberitaan 7 Hari Terakhir" value={formatNumber(recent.cur)} icon={AlertOctagon} tone="amber" hint={`${recent.cur >= recent.prev ? '▲' : '▼'} dibanding ${formatNumber(recent.prev)} pada 7 hari sebelumnya`} />
+        <KpiCard label="Cakupan Dominan" value={biggest.label.split(' & ')[0]} icon={Layers} tone="slate" hint={`${formatNumber(biggest.total)} berita (${Math.round((biggest.total / total) * 100)}%)`} />
+        <KpiCard label="Sumber Media" value={formatNumber(media.total)} icon={Radio} tone="slate" hint={`10 teratas hanya ${Math.round(topShare * 100)}% berita`} />
       </div>
 
       <div className="mb-5">
         <div className="mb-2 flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-orange-600" />
-          <h2 className="text-sm font-semibold text-slate-800">Alert untuk PT AR</h2>
+          <h2 className="text-sm font-semibold text-slate-800">Peringatan Isu Prioritas PT AR</h2>
           <span className="text-xs text-slate-400">Berita yang perlu diperhatikan; status dihitung dari berita 7 hari terakhir</span>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -191,7 +191,7 @@ function IndustryView({ d }: { d: Feed }) {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
 <Card className="flex flex-col">
-          <CardHeader title="News Coverage" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
+          <CardHeader title="Distribusi Pemberitaan per Cakupan" subtitle={`${formatNumber(total)} berita, 22 Sep – ${shortDate(lastDay)} 2026, jumlah berita tiap cakupan. Klik batang untuk rincian`} />
           <CardBody className="flex-1">
             <ResponsiveContainer width="100%" height={560}>
               <BarChart data={byCoverage} layout="vertical" margin={{ left: 8, right: 40 }}>
@@ -210,7 +210,7 @@ function IndustryView({ d }: { d: Feed }) {
           </CardBody>
         </Card>
 <Card className="flex flex-col">
-        <CardHeader title={`Rincian cakupan: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]} Klik tema untuk melihat beritanya.`} />
+        <CardHeader title={`Komposisi Tema: ${COVERAGES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. ${COVERAGE_HINT[selected]} Klik tema untuk melihat beritanya.`} />
         <CardBody>
           <div className="grid grid-cols-1 gap-5">
             <div className="flex flex-col items-center gap-4 md:flex-row">
@@ -251,7 +251,7 @@ function IndustryView({ d }: { d: Feed }) {
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  {theme === null ? 'Berita terbaru pada cakupan ini' : `Berita terbaru: ${INDUSTRY_THEMES[theme]}`}
+                  {theme === null ? 'Pemberitaan Terkini pada Cakupan Ini' : `Pemberitaan Terkini: ${INDUSTRY_THEMES[theme]}`}
                 </p>
                 {theme !== null && (
                   <button type="button" onClick={() => setTheme(null)} className="text-[11px] text-blue-700 hover:underline">
@@ -280,7 +280,7 @@ function IndustryView({ d }: { d: Feed }) {
 </div>
 
 <Card className="mb-5 flex flex-col">
-          <CardHeader title="Cakupan per minggu" subtitle="Jumlah berita per cakupan; warna lebih pekat = lebih ramai dibanding minggu lain pada cakupan yang sama" />
+          <CardHeader title="Tren Mingguan per Cakupan" subtitle="Jumlah berita per cakupan; warna lebih pekat = lebih ramai dibanding minggu lain pada cakupan yang sama" />
           <CardBody className="flex-1">
             <table className="w-full table-fixed text-sm">
               <thead>
@@ -319,7 +319,7 @@ function IndustryView({ d }: { d: Feed }) {
         </Card>
 
       <Card>
-        <CardHeader title="Daftar Berita" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
+        <CardHeader title="Arsip Pemberitaan" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
         <CardBody>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <div className="relative">
