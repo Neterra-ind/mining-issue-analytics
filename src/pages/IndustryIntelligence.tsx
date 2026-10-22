@@ -1,14 +1,29 @@
 import { useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Newspaper, Radio, Layers, Filter, ExternalLink, Search } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Newspaper, Radio, Layers, Filter, ExternalLink, Search, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { KpiCard } from '@/components/ui/KpiCard'
-import { INDUSTRY_ISSUES, INDUSTRY_OUTSIDE, INDUSTRY_STATS, industryFeed, industryMedia } from '@/data/industryFeed'
+import { INDUSTRY_ISSUES, INDUSTRY_OUTSIDE, INDUSTRY_STATS, alertFeed, industryFeed, industryMedia, industrySubs } from '@/data/industryFeed'
 import { formatNumber } from '@/lib/utils'
 
 const BLUE = '#16547A'
 const GREY = '#94a3b8'
+const ORANGE = '#E28A2B'
+const SLICES = ['#16547A', '#2E7DB0', '#6FA8CF', '#A9C8E0', '#94a3b8', '#E28A2B', '#C5CED8']
+
+/** Kartu alert untuk PT AR. Batas: berapa berita dalam 7 hari terakhir yang memicu status. */
+const ALERT_CARDS = [
+  { title: 'Menyebut PT AR / Martabe langsung', desc: 'Berita yang memuat Agincourt, PTAR, Martabe atau Batang Toru: operasi, lingkungan, hubungan dengan warga.', rule: 'Tinggi bila ≥1 berita dalam 7 hari terakhir', high: 1, warn: 1 },
+  { title: 'Kebijakan nasional untuk produsen emas', desc: 'HPE/harga patokan emas, royalti, PNBP minerba, DHE, bea keluar, Satgas PKH, izin tambang prioritas, Permen ESDM.', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥10', high: 10, warn: 3 },
+  { title: 'PETI & tekanan sosial di sekitar wilayah', desc: 'Peti, penertiban, korban, dan aksi warga di Tapsel, Madina, dan Sumatera Utara (sekitar wilayah operasi).', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥8', high: 8, warn: 3 },
+  { title: 'Pelajaran dari perusahaan sejenis', desc: 'Pemulihan Grasberg (Freeport) dan PETI di konsesi Amman: pembanding risiko operasional.', rule: 'Waspada bila ≥1 berita dalam 7 hari', high: 99, warn: 1 },
+] as const
+const LEVEL_STYLE = {
+  Tinggi: 'bg-orange-500 text-white',
+  Waspada: 'bg-orange-100 text-orange-800',
+  Normal: 'bg-slate-100 text-slate-600',
+} as const
 
 function weekStart(iso: string): string {
   const d = new Date(iso + 'T00:00:00Z')
@@ -27,12 +42,14 @@ export default function IndustryIntelligence() {
   const [issueFilter, setIssueFilter] = useState<number>(-1)
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [selected, setSelected] = useState(0)
+  const [openAlert, setOpenAlert] = useState<number | null>(null)
   const total = industryFeed.length
 
   const byIssue = useMemo(() => {
     const counts = INDUSTRY_ISSUES.map(() => 0)
     for (const r of industryFeed) counts[r[2]]++
-    return INDUSTRY_ISSUES.map((label, i) => ({ label, count: counts[i], outside: INDUSTRY_OUTSIDE.includes(label) }))
+    return INDUSTRY_ISSUES.map((label, i) => ({ label, idx: i, count: counts[i], outside: INDUSTRY_OUTSIDE.includes(label) }))
       .sort((a, b) => b.count - a.count)
   }, [])
 
@@ -70,6 +87,26 @@ export default function IndustryIntelligence() {
   }, [issueFilter, query])
   const pages = Math.max(1, Math.ceil(list.length / PAGE))
   const shown = list.slice(page * PAGE, page * PAGE + PAGE)
+  const detail = useMemo(() => {
+    const rows = industryFeed.filter((r) => r[2] === selected)
+    const m = new Map<number, number>()
+    for (const r of rows) if (r[5] >= 0) m.set(r[5], (m.get(r[5]) ?? 0) + 1)
+    const slices = Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([i, count]) => ({ name: industrySubs[i], count }))
+    return { total: rows.length, slices, latest: rows.slice(0, 6) }
+  }, [selected])
+
+  const alerts = useMemo(() => {
+    const last = alertFeed.reduce((mx, r) => (r[0] > mx ? r[0] : mx), '')
+    const cut = new Date(last + 'T00:00:00Z')
+    cut.setUTCDate(cut.getUTCDate() - 6)
+    const from = cut.toISOString().slice(0, 10)
+    return ALERT_CARDS.map((c, i) => {
+      const items = alertFeed.filter((r) => r[4] === i)
+      const n7 = items.filter((r) => r[0] >= from).length
+      const level: keyof typeof LEVEL_STYLE = n7 >= c.high ? 'Tinggi' : n7 >= c.warn ? 'Waspada' : 'Normal'
+      return { ...c, items, n7, level }
+    })
+  }, [])
   const lastDay = daily[daily.length - 1]?.date ?? ''
 
   return (
@@ -83,19 +120,63 @@ export default function IndustryIntelligence() {
         <KpiCard label="Porsi emas" value={`${Math.round((total / INDUSTRY_STATS.miningAll) * 100)}%`} icon={Filter} tone="amber" hint="sisanya batu bara, nikel, timah, dan lain-lain" />
       </div>
 
+      <div className="mb-5">
+        <div className="mb-2 flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-orange-600" />
+          <h2 className="text-sm font-semibold text-slate-800">Alert untuk PT AR</h2>
+          <span className="text-xs text-slate-400">Berita yang perlu diperhatikan; status dihitung dari berita 7 hari terakhir</span>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {alerts.map((a, i) => (
+            <Card key={a.title} className="flex flex-col">
+              <CardBody className="flex flex-1 flex-col gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-semibold leading-snug text-slate-800">{a.title}</p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${LEVEL_STYLE[a.level]}`}>{a.level}</span>
+                </div>
+                <p className="text-xs text-slate-500">{a.desc}</p>
+                <p className="text-xs text-slate-700">
+                  <span className="text-lg font-semibold text-slate-900">{a.n7}</span> berita 7 hari terakhir · {a.items.length} berita total
+                </p>
+                <ul className="space-y-1.5">
+                  {a.items.slice(0, openAlert === i ? 12 : 2).map((r, k) => (
+                    <li key={k} className="text-xs leading-snug">
+                      {r[3] ? (
+                        <a href={r[3]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[2]}</a>
+                      ) : (
+                        <span className="text-slate-700">{r[2]}</span>
+                      )}
+                      <span className="block text-[11px] text-slate-400">{shortDate(r[0])} · {industryMedia[r[1]]}</span>
+                    </li>
+                  ))}
+                </ul>
+                {a.items.length > 2 && (
+                  <button onClick={() => setOpenAlert(openAlert === i ? null : i)} className="self-start text-xs font-medium text-blue-700 hover:underline">
+                    {openAlert === i ? 'Ringkas' : 'Lihat lebih banyak'}
+                  </button>
+                )}
+                <p className="mt-auto flex items-center gap-1 border-t border-slate-100 pt-2 text-[11px] text-slate-400">
+                  <AlertTriangle className="h-3 w-3" /> Batas: {a.rule}
+                </p>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="flex flex-col">
-          <CardHeader title="Pemberitaan Isu Industri per Kategori" subtitle={`${formatNumber(total)} berita unik, 22 Sep – ${shortDate(lastDay)} 2026. Abu-abu: belum ada di taksonomi Industry`} />
+          <CardHeader title="Pemberitaan Isu Industri per Kategori" subtitle={`${formatNumber(total)} berita unik, 22 Sep – ${shortDate(lastDay)} 2026. Abu-abu: usulan tema baru. Klik batang untuk rincian`} />
           <CardBody className="flex-1">
-            <ResponsiveContainer width="100%" height={340}>
+            <ResponsiveContainer width="100%" height={430}>
               <BarChart data={byIssue} layout="vertical" margin={{ left: 8, right: 56 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
                 <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="label" width={130} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${formatNumber(v)} berita`, 'Jumlah']} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d: { idx?: number }) => typeof d.idx === 'number' && setSelected(d.idx)}>
                   {byIssue.map((b) => (
-                    <Cell key={b.label} fill={b.outside ? GREY : BLUE} />
+                    <Cell key={b.label} fill={b.outside ? GREY : BLUE} fillOpacity={b.idx === selected ? 1 : 0.55} />
                   ))}
                   <LabelList dataKey="count" position="right" fontSize={11} fill="#475569" formatter={(v: number) => formatNumber(v)} />
                 </Bar>
@@ -148,6 +229,64 @@ export default function IndustryIntelligence() {
           </CardBody>
         </Card>
       </div>
+
+      <Card className="mb-5">
+        <CardHeader title={`Rincian tema: ${INDUSTRY_ISSUES[selected]}`} subtitle={`${formatNumber(detail.total)} berita. Pilih tema lain dengan mengklik batang di grafik kategori`} />
+        <CardBody>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <div>
+              {detail.slices.length >= 2 ? (
+                <div className="flex flex-col items-center gap-4 md:flex-row">
+                  <div className="relative h-52 w-52 shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={detail.slices} dataKey="count" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={1} stroke="none">
+                          {detail.slices.map((_, i) => (
+                            <Cell key={i} fill={SLICES[i % SLICES.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, n: string) => [`${formatNumber(v)} berita`, n]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-xl font-semibold text-slate-800">{formatNumber(detail.total)}</span>
+                      <span className="text-[11px] text-slate-400">berita</span>
+                    </div>
+                  </div>
+                  <ul className="w-full space-y-2 text-xs">
+                    {detail.slices.map((sl, i) => (
+                      <li key={sl.name} className="flex items-center justify-between gap-3">
+                        <span className="flex items-center gap-2 text-slate-700">
+                          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: SLICES[i % SLICES.length] }} />
+                          {sl.name}
+                        </span>
+                        <span className="whitespace-nowrap text-slate-500">{formatNumber(sl.count)} · {Math.round((sl.count / detail.total) * 100)}%</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Tema ini terlalu kecil untuk dipecah lagi. Berita terbarunya ada di sebelah kanan.</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Berita terbaru pada tema ini</p>
+              <ul className="divide-y divide-slate-100">
+                {detail.latest.map((r, k) => (
+                  <li key={k} className="py-1.5 text-xs leading-snug">
+                    {r[4] ? (
+                      <a href={r[4]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[3]}</a>
+                    ) : (
+                      <span className="text-slate-700">{r[3]}</span>
+                    )}
+                    <span className="block text-[11px] text-slate-400">{shortDate(r[0])} · {industryMedia[r[1]]}{r[5] >= 0 ? ` · ${industrySubs[r[5]]}` : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="flex flex-col">
@@ -258,7 +397,7 @@ export default function IndustryIntelligence() {
       </Card>
 
       <p className="mt-4 text-xs text-slate-400">
-        Catatan: sentimen dari file sumber tidak dipakai. Berita disaring ke tambang emas (judul memuat emas, PETI, atau perusahaan emas) lalu dikelompokkan dengan aturan kata kunci; hasilnya perkiraan, masih bisa ada berita yang salah kategori.
+        Catatan: sentimen dari file sumber tidak dipakai. Tema abu-abu dan sub-tema adalah nama usulan, dibuat dengan aturan kata kunci. Kartu alert memakai seluruh berita tambang (tidak hanya yang berjudul emas). Berita disaring ke tambang emas (judul memuat emas, PETI, atau perusahaan emas) lalu dikelompokkan dengan aturan kata kunci; hasilnya perkiraan, masih bisa ada berita yang salah kategori.
       </p>
     </div>
   )
