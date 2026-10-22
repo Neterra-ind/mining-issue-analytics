@@ -201,9 +201,9 @@ export function ReputationOverview({
               <text x="100" y="98" textAnchor="middle" fontSize="26" fontWeight="700" fill="#0f172a">{total}</text>
               <text x="100" y="116" textAnchor="middle" fontSize="11" fill="#64748b">berita</text>
             </svg>
-            <ul className="flex w-full flex-1 flex-col justify-between gap-2 self-stretch text-xs">
+            <ul className="flex w-full flex-1 flex-col justify-center gap-2.5 text-[13px]">
               {donut.map((d) => (
-                <li key={d.key} className="grid grid-cols-[12px_minmax(0,1fr)_auto] items-start gap-2.5 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0">
+                <li key={d.key} className="grid grid-cols-[12px_minmax(0,1fr)_auto] items-start gap-2.5 border-t border-slate-100 pt-2.5 first:border-t-0 first:pt-0">
                   <span className="mt-1 h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
                   <div className="min-w-0">
                     {d.issueId ? (
