@@ -20,6 +20,7 @@ const ALERT_CARDS = [
   { title: 'Kebijakan nasional untuk produsen emas', desc: 'HPE/harga patokan emas, royalti, PNBP minerba, DHE, bea keluar, Satgas PKH, izin tambang prioritas, Permen ESDM.', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥10', high: 10, warn: 3 },
   { title: 'PETI & tekanan sosial di sekitar wilayah', desc: 'Peti, penertiban, korban, dan aksi warga di Tapsel, Madina, dan Sumatera Utara (sekitar wilayah operasi).', rule: 'Waspada bila ≥3 berita dalam 7 hari; Tinggi bila ≥8', high: 8, warn: 3 },
   { title: 'Pelajaran dari perusahaan sejenis', desc: 'Pemulihan Grasberg (Freeport) dan PETI di konsesi Amman: pembanding risiko operasional.', rule: 'Waspada bila ≥1 berita dalam 7 hari', high: 99, warn: 1 },
+  { title: 'Berita negatif yang mengganggu operasional tambang emas', desc: 'Sentimen Negative pada cakupan perusahaan: korban jiwa, penutupan, sengketa lahan, pencabutan izin, kasus hukum di tambang emas dan PETI.', rule: 'Waspada bila ≥10 berita dalam 7 hari; Tinggi bila ≥30', high: 30, warn: 10 },
 ] as const
 const LEVEL_STYLE = {
   Tinggi: 'bg-orange-500 text-white',
@@ -172,7 +173,7 @@ function IndustryView({ d }: { d: Feed }) {
           <h2 className="text-sm font-semibold text-slate-800">Alert untuk PT AR</h2>
           <span className="text-xs text-slate-400">Berita yang perlu diperhatikan; status dihitung dari berita 7 hari terakhir</span>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {alerts.map((a, i) => (
             <Card key={a.title} className="flex flex-col">
               <CardBody className="flex flex-1 flex-col gap-2">
