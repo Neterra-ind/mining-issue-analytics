@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { AlertOctagon, Newspaper, PieChart, ThumbsDown, ThumbsUp, Wallet } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useData } from '@/lib/store'
 import { PageHeader } from '@/components/PageHeader'
 import { FilterBar } from '@/components/FilterBar'
-import { KpiCard } from '@/components/ui/KpiCard'
+import { ReputationOverview } from '@/components/reputation/ReputationOverview'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Table, type Column } from '@/components/ui/Table'
 import { Badge, RiskBadge, SentimentBadge } from '@/components/ui/Badge'
-import { emptyFilters, filterNews, sentimentBreakdown, trendByDay } from '@/lib/aggregations'
-import { formatNumber, formatRupiah, groupBy, percentage } from '@/lib/utils'
+import { emptyFilters, filterNews, sentimentBreakdown } from '@/lib/aggregations'
+import { groupBy } from '@/lib/utils'
 import type { GlobalFilters } from '@/types'
 
 export default function CorporateReputation() {
@@ -30,18 +29,13 @@ export default function CorporateReputation() {
   }, [searchParams])
 
   const company = data.companies.find((c) => c.id === companyId) ?? data.companies[0]
-  const allCorporateNews = useMemo(() => data.news.filter((n) => n.pillar === 'Corporate'), [data.news])
   const news = useMemo(() => filterNews(data.news, { ...filters, pillar: 'Corporate', companyId }), [data.news, filters, companyId])
 
-  const sb = sentimentBreakdown(news)
-  const potentialNegative = news.filter((n) => n.sentiment !== 'Positive' && (n.risk === 'High' || n.risk === 'Critical')).length
-  const prValue = news.reduce((s, n) => s + n.prValue, 0)
-  const mediaShare = percentage(news.length, allCorporateNews.length || 1)
+  // Ringkasan reputasi membaca semua pilar untuk perusahaan terpilih, agar isu ESG/lingkungan ikut terlihat.
+  const overviewNews = useMemo(() => filterNews(data.news, { ...filters, pillar: 'All', companyId }), [data.news, filters, companyId])
 
   const topics = data.taxonomy.filter((t) => t.pillar === 'Corporate').sort((a, b) => a.order - b.order)
   const topicDist = topics.map((t) => ({ label: t.label, count: news.filter((n) => n.topics.includes(t.label)).length }))
-
-  const trend = trendByDay(news)
 
   const reputationTopicLabels = useMemo(() => new Set(topics.map((t) => t.label)), [topics])
 
@@ -106,34 +100,9 @@ export default function CorporateReputation() {
         <FilterBar filters={filters} onChange={(f) => { setFilters(f); setCompanyId(f.companyId === 'All' ? companyId : f.companyId) }} showPillar={false} showCompany={false} />
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Total News" value={formatNumber(news.length)} icon={Newspaper} tone="blue" hint={company.name} />
-        <KpiCard label="Positive News" value={formatNumber(sb.positive)} icon={ThumbsUp} tone="emerald" />
-        <KpiCard label="Neutral News" value={formatNumber(sb.neutral)} icon={PieChart} tone="slate" />
-        <KpiCard label="Negative News" value={formatNumber(sb.negative)} icon={ThumbsDown} tone="red" />
-        <KpiCard label="Potential Negative" value={formatNumber(potentialNegative)} icon={AlertOctagon} tone="amber" />
-        <KpiCard label="PR Value" value={formatRupiah(prValue)} icon={Wallet} tone="blue" />
-        <KpiCard label="Media Share" value={`${mediaShare}%`} icon={PieChart} tone="slate" hint="dari total pemberitaan Corporate" />
-      </div>
+      <ReputationOverview news={overviewNews} issues={data.issues} companyName={company.shortName} onOpenIssue={(id) => navigate(`/issues/${id}`)} />
 
-      <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader title="Sentiment Trend" subtitle={`Tren sentimen pemberitaan ${company.shortName} dari waktu ke waktu`} />
-          <CardBody>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Area type="monotone" dataKey="positive" stroke="#1a8f5a" fill="#1a8f5a" fillOpacity={0.15} name="Positive" />
-                <Area type="monotone" dataKey="neutral" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.1} name="Neutral" />
-                <Area type="monotone" dataKey="negative" stroke="#c0392b" fill="#c0392b" fillOpacity={0.15} name="Negative" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardBody>
-        </Card>
-
+      <div className="mb-5">
         <Card>
           <CardHeader title="Reputation Topics" subtitle="Distribusi topik reputasi" />
           <CardBody>
