@@ -155,35 +155,47 @@ function IndustryView({ d }: { d: Feed }) {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {alerts.map((a, i) => (
             <Card key={a.title} className="flex flex-col">
-              <CardBody className="flex flex-1 flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
+              <CardBody className="flex flex-1 flex-col gap-3">
+                <div className="flex min-h-10 items-start justify-between gap-2">
                   <p className="text-sm font-semibold leading-snug text-slate-800">{a.title}</p>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${LEVEL_STYLE[a.level]}`}>{a.level}</span>
                 </div>
-                <p className="text-xs text-slate-500">{a.desc}</p>
-                <p className="text-xs text-slate-700">
-                  <span className="text-lg font-semibold text-slate-900">{a.n7}</span> berita 7 hari terakhir · {a.items.length} berita total
-                </p>
-                <ul className="space-y-1.5">
-                  {a.items.slice(0, openAlert === i ? 12 : 2).map((r, k) => (
-                    <li key={k} className="text-xs leading-snug">
-                      {r[3] ? (
-                        <a href={r[3]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[2]}</a>
-                      ) : (
-                        <span className="text-slate-700">{r[2]}</span>
-                      )}
-                      <span className="block text-[11px] text-slate-400">{shortDate(r[0])} · {industryMedia[r[1]]}</span>
-                    </li>
-                  ))}
-                </ul>
-                {a.items.length > 2 && (
-                  <button onClick={() => setOpenAlert(openAlert === i ? null : i)} className="self-start text-xs font-medium text-blue-700 hover:underline">
-                    {openAlert === i ? 'Ringkas' : 'Lihat lebih banyak'}
-                  </button>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold leading-none text-slate-900">{a.n7}</span>
+                  <span className="text-xs text-slate-500">berita 7 hari terakhir · {a.items.length} total</span>
+                </div>
+                {a.items[0] && (
+                  <p className="line-clamp-2 text-xs leading-snug text-slate-600">
+                    {a.items[0][3] ? (
+                      <a href={a.items[0][3]} target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline">{a.items[0][2]}</a>
+                    ) : (
+                      a.items[0][2]
+                    )}
+                  </p>
                 )}
-                <p className="mt-auto flex items-center gap-1 border-t border-slate-100 pt-2 text-[11px] text-slate-400">
-                  <AlertTriangle className="h-3 w-3" /> Batas: {a.rule}
-                </p>
+                {openAlert === i && (
+                  <div className="space-y-3 border-t border-slate-100 pt-3">
+                    <p className="text-xs text-slate-500">{a.desc}</p>
+                    <ul className="space-y-1.5">
+                      {a.items.slice(1, 12).map((r, k) => (
+                        <li key={k} className="text-xs leading-snug">
+                          {r[3] ? (
+                            <a href={r[3]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[2]}</a>
+                          ) : (
+                            <span className="text-slate-700">{r[2]}</span>
+                          )}
+                          <span className="block text-[11px] text-slate-400">{shortDate(r[0])} · {industryMedia[r[1]]}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="flex items-start gap-1 text-[11px] text-slate-400">
+                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" /> Batas: {a.rule}
+                    </p>
+                  </div>
+                )}
+                <button onClick={() => setOpenAlert(openAlert === i ? null : i)} className="mt-auto self-start text-xs font-medium text-blue-700 hover:underline">
+                  {openAlert === i ? 'Ringkas' : 'Detail'}
+                </button>
               </CardBody>
             </Card>
           ))}
