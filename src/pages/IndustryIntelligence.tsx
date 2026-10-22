@@ -81,6 +81,28 @@ function IndustryView({ d }: { d: Feed }) {
     return { cur, prev }
   }, [industryFeed, lastDay])
 
+  const rising = useMemo(() => {
+    const day = (n: number) => {
+      const c = new Date(lastDay + 'T00:00:00Z')
+      c.setUTCDate(c.getUTCDate() - n)
+      return c.toISOString().slice(0, 10)
+    }
+    const from7 = day(6)
+    const from14 = day(13)
+    const cur = new Map<number, typeof industryFeed>()
+    const prev = new Map<number, number>()
+    for (const r of industryFeed) {
+      if (r[0] >= from7) cur.set(r[5], [...(cur.get(r[5]) ?? []), r])
+      else if (r[0] >= from14) prev.set(r[5], (prev.get(r[5]) ?? 0) + 1)
+    }
+    const rows = Array.from(cur.entries()).map(([t, items]) => {
+      const p = prev.get(t) ?? 0
+      const sorted = [...items].sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      return { theme: t, cur: items.length, prev: p, delta: items.length - p, pct: p > 0 ? Math.round(((items.length - p) / p) * 100) : null, samples: sorted.slice(0, 2) }
+    })
+    return { from7, rows: rows.filter((x) => x.delta > 0 && x.cur >= 5).sort((a, b) => b.delta - a.delta).slice(0, 5) }
+  }, [industryFeed, lastDay])
+
   const media = useMemo(() => {
     const m = new Map<number, number>()
     for (const r of industryFeed) m.set(r[1], (m.get(r[1]) ?? 0) + 1)
@@ -266,6 +288,43 @@ function IndustryView({ d }: { d: Feed }) {
         </CardBody>
       </Card>
 </div>
+
+      <Card className="mb-5">
+        <CardHeader title="Tema paling naik minggu ini" subtitle={`7 hari terakhir (${shortDate(rising.from7)} – ${shortDate(lastDay)}) dibanding 7 hari sebelumnya. Hanya tema dengan minimal 5 berita pekan ini, diurutkan dari kenaikan jumlah terbesar`} />
+        <CardBody>
+          {rising.rows.length === 0 ? (
+            <p className="text-xs text-slate-500">Tidak ada tema yang naik berarti minggu ini.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {rising.rows.map((x) => (
+                <li key={x.theme} className="grid grid-cols-1 gap-2 py-3 md:grid-cols-[220px_1fr] md:gap-6">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{INDUSTRY_THEMES[x.theme]}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {formatNumber(x.prev)} → {formatNumber(x.cur)} berita
+                    </p>
+                    <span className="mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: '#FDEBD8', color: '#B45309' }}>
+                      ▲ {formatNumber(x.delta)}{x.pct !== null ? ` (+${x.pct}%)` : ' (baru muncul)'}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {x.samples.map((r, k) => (
+                      <li key={k} className="text-xs leading-snug">
+                        {r[4] ? (
+                          <a href={r[4]} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-700 hover:underline">{r[3]}</a>
+                        ) : (
+                          <span className="text-slate-700">{r[3]}</span>
+                        )}
+                        <span className="block text-[11px] text-slate-400">{shortDate(r[0])} · {industryMedia[r[1]]}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader title="Daftar Berita" subtitle={`${formatNumber(list.length)} berita, terbaru di atas. Klik judul untuk membuka sumber`} />
