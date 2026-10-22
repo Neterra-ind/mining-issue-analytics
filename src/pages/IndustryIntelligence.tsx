@@ -144,7 +144,7 @@ function IndustryView({ d }: { d: Feed }) {
     <div>
       <PageHeader configKey="industry.title" title="Mining Industry" subtitleKey="industry.subtitle" subtitle="Pemberitaan industri pertambangan yang perlu diperhatikan, dengan fokus pada tambang emas." />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
         <KpiCard label="Berita mining industry" value={formatNumber(total)} icon={Newspaper} tone="blue" hint={`dari ${formatNumber(INDUSTRY_STATS.miningAll)} berita tambang, tanpa batu bara`} />
         <KpiCard label="Berita 7 hari terakhir" value={formatNumber(recent.cur)} icon={AlertOctagon} tone="amber" hint={`${recent.cur >= recent.prev ? '▲' : '▼'} dibanding ${formatNumber(recent.prev)} pada 7 hari sebelumnya`} />
         <KpiCard label="Cakupan terbesar" value={biggest.label.split(' & ')[0]} icon={Layers} tone="slate" hint={`${formatNumber(biggest.total)} berita (${Math.round((biggest.total / total) * 100)}%)`} />
