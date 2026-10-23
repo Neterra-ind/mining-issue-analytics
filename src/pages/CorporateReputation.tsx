@@ -168,7 +168,7 @@ export default function CorporateReputation() {
       </div>
 
       <div className="mb-5">
-        <FilterBar filters={filters} onChange={(f) => { setFilters(f); setCompanyId(f.companyId === 'All' ? companyId : f.companyId) }} showPillar={false} showCompany={false} />
+        <FilterBar filters={filters} onChange={(f) => { setFilters(f); setCompanyId(f.companyId === 'All' ? companyId : f.companyId) }} showPillar={false} showCompany={false} showRegion={false} />
       </div>
 
       <ReputationOverview news={overviewNews} issues={data.issues} companyName={company.shortName} onOpenIssue={(id) => navigate(`/issues/${id}`)}
