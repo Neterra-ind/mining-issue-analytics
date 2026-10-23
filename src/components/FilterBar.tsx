@@ -11,11 +11,13 @@ export function FilterBar({
   onChange,
   showPillar = true,
   showCompany = true,
+  showRegion = true,
 }: {
   filters: GlobalFilters
   onChange: (next: GlobalFilters) => void
   showPillar?: boolean
   showCompany?: boolean
+  showRegion?: boolean
 }) {
   const { data } = useData()
   const { showToast } = useToast()
@@ -53,14 +55,16 @@ export function FilterBar({
           ))}
         </select>
       )}
-      <select value={filters.region} onChange={(e) => update('region', e.target.value)} className={selectClass}>
-        <option value="All">Semua Wilayah</option>
-        {regions.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
+      {showRegion && (
+        <select value={filters.region} onChange={(e) => update('region', e.target.value)} className={selectClass}>
+          <option value="All">Semua Wilayah</option>
+          {regions.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+      )}
       <select value={filters.mediaType} onChange={(e) => update('mediaType', e.target.value as GlobalFilters['mediaType'])} className={selectClass}>
         <option value="All">Semua Media</option>
         <option value="Online">Online</option>
