@@ -18,7 +18,6 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth'
 import { EditableText } from '@/components/ui/EditableText'
-import miningLogo from '@/assets/mining-logo.png'
 import logoNeterra from '@/assets/logo-neterra.png'
 
 interface NavItem {
@@ -81,7 +80,6 @@ const NAV_GROUPS: NavGroup[] = [
 function BrandMark() {
   return (
     <div className="mb-6 flex items-center gap-2.5 px-2">
-      <img src={miningLogo} alt="Mining Issue Analytics" className="h-10 w-10 shrink-0 object-contain" />
       <div className="min-w-0">
         <EditableText as="p" configKey="app.title" defaultValue="Mining Issue Analytics" className="truncate text-sm font-semibold leading-tight text-slate-900" />
         <EditableText as="p" configKey="app.subtitle" defaultValue="Industry, ESG & Corporate Reputation" className="truncate text-[11px] leading-tight text-slate-500" />

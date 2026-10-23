@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import miningLogo from '@/assets/mining-logo.png'
 
 export default function Login() {
   const { login } = useAuth()
@@ -18,7 +17,6 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-7 shadow-xl">
         <div className="mb-6 flex flex-col items-center text-center">
-          <img src={miningLogo} alt="Mining Issue Analytics" className="mb-3 h-16 w-16 object-contain" />
           <h1 className="text-lg font-semibold text-slate-900">Mining Issue Analytics</h1>
           <p className="mt-1 text-sm text-slate-500">Industry, ESG & Corporate Reputation Intelligence</p>
         </div>
