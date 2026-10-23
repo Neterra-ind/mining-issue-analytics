@@ -166,12 +166,12 @@ export function ReputationOverview({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
       <Card className="flex flex-col">
-        <CardHeader title="Rentang isu" subtitle={`Porsi berita tiap isu (n = ${total}). Klik nama isu untuk detail.`} />
+        <CardHeader title="Rentang isu" subtitle={`Porsi (%) dan jumlah berita tiap isu (n = ${total}). Klik nama isu untuk detail.`} />
         <CardBody className="flex flex-1 flex-col">
-          <div className="flex flex-1 flex-col items-center gap-6 md:flex-row">
-            <svg viewBox="0 0 200 200" className="h-56 w-56 shrink-0 self-center" role="img" aria-label={`Porsi berita per isu, n = ${total}`}>
+          <div className="flex flex-1 flex-col items-center gap-5 md:flex-row">
+            <svg viewBox="0 0 200 200" className="h-52 w-52 shrink-0 self-center" role="img" aria-label={`Porsi berita per isu, n = ${total}`}>
               {(() => {
                 const r = 70
                 const c = 2 * Math.PI * r
@@ -201,9 +201,9 @@ export function ReputationOverview({
               <text x="100" y="98" textAnchor="middle" fontSize="26" fontWeight="700" fill="#0f172a">{total}</text>
               <text x="100" y="116" textAnchor="middle" fontSize="11" fill="#64748b">berita</text>
             </svg>
-            <ul className="flex w-full flex-1 flex-col justify-center gap-2.5 text-[13px]">
+            <ul className="flex w-full flex-1 flex-col justify-center gap-1.5 text-[13px]">
               {donut.map((d) => (
-                <li key={d.key} className="grid grid-cols-[12px_minmax(0,1fr)_auto] items-start gap-2.5 border-t border-slate-100 pt-2.5 first:border-t-0 first:pt-0">
+                <li key={d.key} className="grid grid-cols-[12px_minmax(0,1fr)_auto] items-start gap-2.5 border-t border-slate-100 pt-1.5 first:border-t-0 first:pt-0">
                   <span className="mt-1 h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
                   <div className="min-w-0">
                     {d.issueId ? (
@@ -212,9 +212,9 @@ export function ReputationOverview({
                       <span className="font-medium text-slate-800">{d.name}</span>
                     )}
                   </div>
-                  <div className="text-right text-slate-700">
+                  <div className="whitespace-nowrap text-right text-slate-700">
                     <span className="font-semibold">{Math.round((d.n / total) * 100)}%</span>
-                    <div className="text-slate-500">{d.n} berita</div>
+                    <span className="text-slate-500"> · {d.n}</span>
                   </div>
                 </li>
               ))}
